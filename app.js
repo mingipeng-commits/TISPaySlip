@@ -242,7 +242,7 @@ function suggestTiers() {
     const mealAllowance = getVal('mealAllowance');
     const otherAllowance = getVal('otherAllowance');
 
-    // 經常性給付 = 本薪 + 伙食津貼 + 其他津貼 (for health insurance)
+    // 經常性給付 = 本薪 + 伙食津貼 + 其他固定津貼 (健保及勞退共用)
     const regularPay = baseSalary + mealAllowance + otherAllowance;
 
     if (baseSalary <= 0) {
@@ -252,18 +252,17 @@ function suggestTiers() {
 
     const laborTier = findTier(baseSalary, LABOR_MIN, LABOR_MAX);
     const healthTier = findTier(regularPay, HEALTH_MIN, HEALTH_MAX);
-    const pensionWage = baseSalary + mealAllowance;
-    const pensionTier = findTier(pensionWage, PENSION_MIN, PENSION_MAX);
+    const pensionTier = findTier(regularPay, PENSION_MIN, PENSION_MAX);
 
     document.getElementById('laborTier').value = laborTier;
     document.getElementById('healthTier').value = healthTier;
     document.getElementById('pensionTier').value = pensionTier;
 
     document.getElementById('tierInfo').innerHTML =
-        `經常性給付 <span>${regularPay.toLocaleString()}</span> 元（本薪＋伙食＋其他津貼）<br>` +
+        `經常性給付 <span>${regularPay.toLocaleString()}</span> 元（本薪＋伙食＋其他固定津貼）<br>` +
         `勞保 <span>${laborTier.toLocaleString()}</span>（依本薪）、` +
         `健保 <span>${healthTier.toLocaleString()}</span>（依經常性給付）、` +
-        `勞退 <span>${pensionTier.toLocaleString()}</span>（依本薪＋伙食 ${pensionWage.toLocaleString()} 元）`;
+        `勞退 <span>${pensionTier.toLocaleString()}</span>（依經常性給付）`;
 }
 
 // ============================================================
@@ -296,7 +295,7 @@ function updatePayslip() {
     addLine(ec, '本薪', entry.baseSalary);
     addLine(ec, '伙食津貼', entry.mealAllowance);
     addLine(ec, '交通津貼', entry.transportAllowance);
-    addLine(ec, '其他津貼', entry.otherAllowance);
+    addLine(ec, '其他固定津貼', entry.otherAllowance);
     addLine(ec, '加班費', entry.overtime);
     addLine(ec, '獎金', entry.bonus);
     if (entry.otherEarning) addLine(ec, entry.otherEarningName || '其他加項', entry.otherEarning);

@@ -1,4 +1,4 @@
-# TIS 薪資條產生器 — 版本紀錄
+# TIS Back Office Portal — 版本紀錄
 
 > **版本編號規則 (Semantic Versioning)**
 > - **X** (Major) — 重大改版或架構重寫
@@ -6,6 +6,17 @@
 > - **Z** (Patch) — 修正錯誤或外觀調整
 
 ---
+
+## Ver. 3.0.0 — 2026-04-04 11:00
+
+- **重大架構升級：建立 TIS Back Office Portal 入口系統**
+- 新增 portal.html 入口頁面，以模組卡片呈現所有功能
+- 共用導覽列（portal-nav.js）及共用樣式（shared.css），所有模組頂部統一導覽
+- 薪資條模組遷移至 /modules/payslip/，員工管理功能從薪資條中獨立
+- 新增人事管理模組（/modules/people/）：完整 CRUD、到/離職狀態、統計卡片
+- 新增 5 個待開發模組佔位頁面：費用報銷、發票管理、稅務申報、營收管理、金流管理
+- 移除根目錄舊版 index.html/app.js/styles.css
+- 目錄結構重整為 modules/ + shared/ 架構
 
 ## Ver. 2.0.1 — 2026-04-04 10:00
 

@@ -1,0 +1,167 @@
+/* ============================================================
+   TIS Back Office Portal — Shared Styles
+   ============================================================ */
+:root {
+    --portal-primary: #1a2332;
+    --portal-accent: #3498db;
+    --portal-bg: #f5f7fa;
+    --portal-text: #2c3e50;
+    --portal-text-light: #7f8c8d;
+    --portal-border: #dce1e8;
+}
+
+/* Portal Top Nav */
+.portal-nav {
+    background: #0d1520;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    height: 44px;
+    font-size: 13px;
+}
+.portal-nav .portal-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: white;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+}
+.portal-nav .portal-brand:hover { opacity: 0.9; }
+.portal-nav .portal-brand .brand-icon { font-size: 18px; }
+
+.portal-nav .portal-links {
+    display: flex;
+    gap: 4px;
+}
+.portal-nav .portal-links a {
+    color: rgba(255,255,255,0.6);
+    text-decoration: none;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+.portal-nav .portal-links a:hover {
+    color: white;
+    background: rgba(255,255,255,0.1);
+}
+.portal-nav .portal-links a.active {
+    color: white;
+    background: var(--portal-accent);
+}
+
+.portal-nav .portal-info {
+    color: rgba(255,255,255,0.5);
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.portal-nav .portal-info .portal-version {
+    opacity: 0.6;
+}
+
+/* Module Header (replaces app-header inside modules) */
+.module-header {
+    background: var(--portal-primary);
+    color: white;
+    padding: 14px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.module-header h1 { font-size: 18px; font-weight: 600; }
+.module-header .subtitle { font-size: 12px; opacity: 0.7; margin-top: 2px; }
+.module-header .header-clock {
+    font-size: 14px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.9;
+    white-space: nowrap;
+}
+
+/* Portal Home */
+.portal-home {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 24px;
+}
+.portal-home .portal-welcome {
+    text-align: center;
+    margin-bottom: 40px;
+}
+.portal-home .portal-welcome h2 {
+    font-size: 26px;
+    color: var(--portal-primary);
+    margin-bottom: 6px;
+}
+.portal-home .portal-welcome p {
+    color: var(--portal-text-light);
+    font-size: 15px;
+}
+.portal-home .portal-welcome .portal-ver {
+    font-size: 12px;
+    color: var(--portal-text-light);
+    margin-top: 4px;
+    opacity: 0.7;
+}
+
+.module-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
+}
+.module-card {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid var(--portal-border);
+    padding: 24px;
+    text-decoration: none;
+    color: var(--portal-text);
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.module-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    border-color: var(--portal-accent);
+}
+.module-card .mc-icon {
+    font-size: 32px;
+    margin-bottom: 4px;
+}
+.module-card .mc-title {
+    font-size: 16px;
+    font-weight: 700;
+}
+.module-card .mc-desc {
+    font-size: 13px;
+    color: var(--portal-text-light);
+    line-height: 1.5;
+}
+.module-card.coming-soon {
+    opacity: 0.5;
+    pointer-events: none;
+}
+.module-card.coming-soon .mc-badge {
+    display: inline-block;
+    background: #ecf0f1;
+    color: var(--portal-text-light);
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+@media print {
+    .portal-nav { display: none !important; }
+}

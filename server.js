@@ -41,6 +41,11 @@ function writeJSON(filePath, data) {
 app.use(express.json());
 app.use(express.static(__dirname));
 
+// Portal root
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'portal.html'));
+});
+
 // ============================================================
 // Payslip Entries API
 // ============================================================
@@ -135,5 +140,5 @@ app.delete('/api/employees/:id', (req, res) => {
 // Start Server
 // ============================================================
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`TIS Payslip Generator running on port ${PORT}`);
+    console.log(`TIS Back Office Portal running on port ${PORT}`);
 });

@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: tis-payslip
+    name: tis-backoffice
     runtime: node
     plan: starter
     buildCommand: npm install

@@ -241,7 +241,6 @@ function switchTab(tab) {
     });
     if (tab === 'saved') renderSavedEntries();
     if (tab === 'employer') renderEmployerSummary();
-    if (tab === 'employees') renderEmployeeList();
 }
 
 // ============================================================
@@ -670,130 +669,6 @@ function printEmployerSummary() {
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('print-target'));
     document.getElementById('tab-employer').classList.add('print-target');
     setTimeout(() => window.print(), 100);
-}
-
-// ============================================================
-// Employee Master Data (4th pillar)
-// ============================================================
-
-let editingEmpMasterId = null;
-
-async function saveEmployee() {
-    const name = document.getElementById('mEmpName').value.trim();
-    const empId = document.getElementById('mEmpId').value.trim();
-    if (!name) { alert('請填寫員工姓名'); return; }
-    if (!empId) { alert('請填寫員工編號'); return; }
-
-    const data = {
-        empName: name,
-        empId: empId,
-        empDept: document.getElementById('mEmpDept').value.trim(),
-        empTitle: document.getElementById('mEmpTitle').value.trim(),
-        baseSalary: parseMoneyValue(document.getElementById('mBaseSalary').value),
-        mealAllowance: parseMoneyValue(document.getElementById('mMealAllowance').value),
-        transportAllowance: parseMoneyValue(document.getElementById('mTransportAllowance').value),
-        otherAllowance: parseMoneyValue(document.getElementById('mOtherAllowance').value),
-        voluntaryPensionRate: parseInt(document.getElementById('mVoluntaryPensionRate').value) || 0,
-        dependents: parseInt(document.getElementById('mDependents').value) || 0,
-    };
-
-    try {
-        if (editingEmpMasterId) {
-            await fetch('/api/employees/' + editingEmpMasterId, {
-                method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-        } else {
-            await fetch('/api/employees', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-        }
-        await loadEmployees();
-        editingEmpMasterId = null;
-        document.getElementById('empEditBanner').style.display = 'none';
-        alert('員工資料已儲存！');
-        resetEmployeeForm();
-        renderEmployeeList();
-        populateEmployeeSelect();
-    } catch (err) {
-        alert('儲存失敗：' + err.message);
-    }
-}
-
-function resetEmployeeForm() {
-    editingEmpMasterId = null;
-    document.getElementById('empEditBanner').style.display = 'none';
-    document.getElementById('mEmpName').value = '';
-    document.getElementById('mEmpId').value = '';
-    document.getElementById('mEmpDept').value = '';
-    document.getElementById('mEmpTitle').value = '';
-    document.querySelectorAll('#tab-employees .money-input').forEach(el => el.value = '0');
-    document.getElementById('mVoluntaryPensionRate').value = 0;
-    document.getElementById('mDependents').value = 0;
-}
-
-function renderEmployeeList() {
-    const employees = getEmployeesCache();
-    const body = document.getElementById('employeeListBody');
-
-    if (employees.length === 0) {
-        body.innerHTML = '<tr><td colspan="11" class="empty-state"><div class="empty-icon">&#128101;</div><p>尚無員工資料，請新增員工</p></td></tr>';
-        return;
-    }
-
-    employees.sort((a, b) => (a.empId || '').localeCompare(b.empId || ''));
-
-    body.innerHTML = employees.map(e => {
-        return '<tr>' +
-            '<td>' + (e.empId || '-') + '</td>' +
-            '<td style="font-weight:600">' + (e.empName || '-') + '</td>' +
-            '<td>' + (e.empDept || '-') + '</td>' +
-            '<td>' + (e.empTitle || '-') + '</td>' +
-            '<td class="amount">' + fmt(e.baseSalary || 0) + '</td>' +
-            '<td class="amount">' + fmt(e.mealAllowance || 0) + '</td>' +
-            '<td class="amount">' + fmt(e.transportAllowance || 0) + '</td>' +
-            '<td class="amount">' + fmt(e.otherAllowance || 0) + '</td>' +
-            '<td>' + (e.voluntaryPensionRate || 0) + '%</td>' +
-            '<td>' + (e.dependents || 0) + '人</td>' +
-            '<td><div class="actions-cell">' +
-                '<button class="btn btn-sm btn-primary" onclick="editEmployee(\'' + e.id + '\')">編輯</button>' +
-                '<button class="btn btn-sm btn-danger" onclick="deleteEmployee(\'' + e.id + '\')">刪除</button>' +
-            '</div></td>' +
-        '</tr>';
-    }).join('');
-}
-
-function editEmployee(id) {
-    const employees = getEmployeesCache();
-    const emp = employees.find(e => e.id === id);
-    if (!emp) return;
-    editingEmpMasterId = id;
-    document.getElementById('mEmpName').value = emp.empName || '';
-    document.getElementById('mEmpId').value = emp.empId || '';
-    document.getElementById('mEmpDept').value = emp.empDept || '';
-    document.getElementById('mEmpTitle').value = emp.empTitle || '';
-    setMoneyField('mBaseSalary', emp.baseSalary);
-    setMoneyField('mMealAllowance', emp.mealAllowance);
-    setMoneyField('mTransportAllowance', emp.transportAllowance);
-    setMoneyField('mOtherAllowance', emp.otherAllowance);
-    document.getElementById('mVoluntaryPensionRate').value = emp.voluntaryPensionRate || 0;
-    document.getElementById('mDependents').value = emp.dependents || 0;
-    document.getElementById('empEditBanner').style.display = 'block';
-    document.getElementById('empEditBannerText').textContent = '正在編輯：' + emp.empName + '（' + emp.empId + '）';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-async function deleteEmployee(id) {
-    if (!confirm('確定要刪除此員工資料？')) return;
-    try {
-        await fetch('/api/employees/' + id, { method: 'DELETE' });
-        await loadEmployees();
-        renderEmployeeList();
-        populateEmployeeSelect();
-    } catch (err) {
-        alert('刪除失敗：' + err.message);
-    }
 }
 
 // ============================================================

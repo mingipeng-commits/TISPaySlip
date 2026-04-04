@@ -12,7 +12,7 @@
     <div>
         <h1>TIS 薪資條產生器</h1>
         <div class="subtitle">泰然策略解密股份有限公司 Talent Intelligence Strategies | 統編 60331107 | 2026 年適用（民國 115 年）</div>
-        <div class="version-tag">Ver. 1.3.2</div>
+        <div class="version-tag">Ver. 1.3.3</div>
     </div>
     <div id="headerClock" class="header-clock"></div>
 </div>
@@ -227,6 +227,7 @@
             <div class="form-group" style="flex-direction:row; align-items:center; gap:8px;">
                 <label style="white-space:nowrap; margin:0; font-weight:600;">月份：</label>
                 <input type="month" id="summaryMonth" onchange="renderEmployerSummary()">
+                <button class="btn btn-sm btn-secondary" onclick="document.getElementById('summaryMonth').value=''; renderEmployerSummary();">顯示全部</button>
             </div>
             <button class="btn btn-sm btn-primary" onclick="printEmployerSummary()">&#128424; 列印雇主總覽</button>
         </div>

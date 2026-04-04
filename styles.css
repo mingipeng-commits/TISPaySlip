@@ -285,6 +285,17 @@ body {
 }
 .summary-table td:first-child, .summary-table th:first-child { text-align: left; }
 .summary-table .total-row { font-weight: 700; background: #fef9e7; }
+.summary-table .month-header-row td {
+    text-align: left; font-weight: 600; background: #eaf2f8; color: var(--accent);
+    font-size: 13px; padding: 6px 10px; border-bottom: 2px solid var(--accent);
+}
+.summary-table .month-total-row {
+    font-weight: 600; background: #f5f7fa; font-size: 12px;
+}
+.summary-table .year-total-row {
+    font-weight: 700; background: #e8f6ef; color: var(--success);
+    border-top: 2px solid var(--success);
+}
 
 /* Modal */
 .modal-overlay {

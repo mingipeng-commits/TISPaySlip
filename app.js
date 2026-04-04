@@ -518,15 +518,59 @@ function exportPayslipPDF() {
 // ============================================================
 // Employer Summary Tab
 // ============================================================
+function emptyTotals() {
+    return { gross: 0, laborEmp: 0, healthEmp: 0, pensionVol: 0, deductions: 0, netPay: 0,
+             laborEr: 0, occupational: 0, wageFund: 0, healthEr: 0, pensionEr: 0, employer: 0, count: 0 };
+}
+
+function addToTotals(t, b) {
+    t.gross += b.grossEarnings; t.laborEmp += b.laborEmp; t.healthEmp += b.healthEmp;
+    t.pensionVol += b.pensionVol; t.deductions += b.totalDeductions; t.netPay += b.netPay;
+    t.laborEr += b.laborEr; t.occupational += b.occupational; t.wageFund += b.wageFund;
+    t.healthEr += b.healthEr; t.pensionEr += b.pensionEr; t.employer += b.totalEmployer;
+    t.count++;
+}
+
+function totalsRow(label, t, cssClass) {
+    return '<tr class="' + cssClass + '">' +
+        '<td>' + label + '</td>' +
+        '<td>' + fmt(t.gross) + '</td>' +
+        '<td>' + fmt(t.laborEmp) + '</td>' +
+        '<td>' + fmt(t.healthEmp) + '</td>' +
+        '<td>' + fmt(t.pensionVol) + '</td>' +
+        '<td style="color:var(--success)">' + fmt(t.netPay) + '</td>' +
+        '<td>' + fmt(t.laborEr + t.occupational + t.wageFund) + '</td>' +
+        '<td>' + fmt(t.healthEr) + '</td>' +
+        '<td>' + fmt(t.pensionEr) + '</td>' +
+        '<td style="color:var(--warning)">' + fmt(t.employer) + '</td>' +
+    '</tr>';
+}
+
+function employeeRow(e, b) {
+    return '<tr>' +
+        '<td>' + (e.empName || '-') + '</td>' +
+        '<td>' + fmt(b.grossEarnings) + '</td>' +
+        '<td>' + fmt(b.laborEmp) + '</td>' +
+        '<td>' + fmt(b.healthEmp) + '</td>' +
+        '<td>' + fmt(b.pensionVol) + '</td>' +
+        '<td style="font-weight:600;color:var(--success)">' + fmt(b.netPay) + '</td>' +
+        '<td>' + fmt(b.laborEr + b.occupational + b.wageFund) + '</td>' +
+        '<td>' + fmt(b.healthEr) + '</td>' +
+        '<td>' + fmt(b.pensionEr) + '</td>' +
+        '<td style="font-weight:600;color:var(--warning)">' + fmt(b.totalEmployer) + '</td>' +
+    '</tr>';
+}
+
 function renderEmployerSummary() {
     const entries = loadEntries();
     const summaryMonth = document.getElementById('summaryMonth').value;
     const filtered = summaryMonth ? entries.filter(e => e.payPeriod === summaryMonth) : entries;
+    const isViewAll = !summaryMonth;
 
     const tableBody = document.getElementById('employerTableBody');
 
     if (filtered.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="11" class="empty-state"><div class="empty-icon">&#127970;</div><p>該月份尚無記錄</p></td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="10" class="empty-state"><div class="empty-icon">&#127970;</div><p>該月份尚無記錄</p></td></tr>';
         document.getElementById('sumGrossAll').textContent = '$0';
         document.getElementById('sumDeductAll').textContent = '$0';
         document.getElementById('sumPayoutAll').textContent = '$0';
@@ -535,59 +579,74 @@ function renderEmployerSummary() {
         return;
     }
 
-    let totals = { gross: 0, laborEmp: 0, healthEmp: 0, pensionVol: 0, deductions: 0, netPay: 0,
-                   laborEr: 0, occupational: 0, wageFund: 0, healthEr: 0, pensionEr: 0, employer: 0 };
+    const grandTotal = emptyTotals();
+    let html = '';
 
-    const rows = filtered.map(e => {
-        const b = calcBreakdown(e);
-        totals.gross += b.grossEarnings;
-        totals.laborEmp += b.laborEmp;
-        totals.healthEmp += b.healthEmp;
-        totals.pensionVol += b.pensionVol;
-        totals.deductions += b.totalDeductions;
-        totals.netPay += b.netPay;
-        totals.laborEr += b.laborEr;
-        totals.occupational += b.occupational;
-        totals.wageFund += b.wageFund;
-        totals.healthEr += b.healthEr;
-        totals.pensionEr += b.pensionEr;
-        totals.employer += b.totalEmployer;
+    if (isViewAll) {
+        // Group by year/month, then summarize by year
+        filtered.sort((a, b) => (a.payPeriod || '').localeCompare(b.payPeriod || '') || (a.empName || '').localeCompare(b.empName || ''));
 
-        return '<tr>' +
-            '<td>' + (e.empName || '-') + '</td>' +
-            '<td>' + fmt(b.grossEarnings) + '</td>' +
-            '<td>' + fmt(b.laborEmp) + '</td>' +
-            '<td>' + fmt(b.healthEmp) + '</td>' +
-            '<td>' + fmt(b.pensionVol) + '</td>' +
-            '<td style="font-weight:600;color:var(--success)">' + fmt(b.netPay) + '</td>' +
-            '<td>' + fmt(b.laborEr + b.occupational + b.wageFund) + '</td>' +
-            '<td>' + fmt(b.healthEr) + '</td>' +
-            '<td>' + fmt(b.pensionEr) + '</td>' +
-            '<td style="font-weight:600;color:var(--warning)">' + fmt(b.totalEmployer) + '</td>' +
-        '</tr>';
-    }).join('');
+        // Build grouped structure: { "2026": { "2026-01": [entries], ... }, ... }
+        const years = {};
+        for (const e of filtered) {
+            const ym = e.payPeriod || '????-??';
+            const y = ym.substring(0, 4);
+            if (!years[y]) years[y] = {};
+            if (!years[y][ym]) years[y][ym] = [];
+            years[y][ym].push(e);
+        }
 
-    const totalRow = '<tr class="total-row">' +
-        '<td>合計（' + filtered.length + ' 人）</td>' +
-        '<td>' + fmt(totals.gross) + '</td>' +
-        '<td>' + fmt(totals.laborEmp) + '</td>' +
-        '<td>' + fmt(totals.healthEmp) + '</td>' +
-        '<td>' + fmt(totals.pensionVol) + '</td>' +
-        '<td style="color:var(--success)">' + fmt(totals.netPay) + '</td>' +
-        '<td>' + fmt(totals.laborEr + totals.occupational + totals.wageFund) + '</td>' +
-        '<td>' + fmt(totals.healthEr) + '</td>' +
-        '<td>' + fmt(totals.pensionEr) + '</td>' +
-        '<td style="color:var(--warning)">' + fmt(totals.employer) + '</td>' +
-    '</tr>';
+        const sortedYears = Object.keys(years).sort();
+        for (const y of sortedYears) {
+            const yearTotal = emptyTotals();
+            const sortedMonths = Object.keys(years[y]).sort();
 
-    tableBody.innerHTML = rows + totalRow;
+            for (const ym of sortedMonths) {
+                const monthEntries = years[y][ym];
+                const monthTotal = emptyTotals();
 
-    // Summary cards
-    document.getElementById('sumGrossAll').textContent = fmt(totals.gross);
-    document.getElementById('sumDeductAll').textContent = fmt(totals.deductions);
-    document.getElementById('sumPayoutAll').textContent = fmt(totals.netPay);
-    document.getElementById('sumEmployerAll').textContent = fmt(totals.employer);
-    document.getElementById('sumTotalCost').textContent = fmt(totals.gross + totals.employer);
+                // Month header
+                html += '<tr class="month-header-row"><td colspan="10">' + ym.replace('-', ' 年 ') + ' 月</td></tr>';
+
+                for (const e of monthEntries) {
+                    const b = calcBreakdown(e);
+                    addToTotals(monthTotal, b);
+                    addToTotals(yearTotal, b);
+                    addToTotals(grandTotal, b);
+                    html += employeeRow(e, b);
+                }
+
+                // Monthly subtotal
+                html += totalsRow('小計（' + monthTotal.count + ' 人）', monthTotal, 'month-total-row');
+            }
+
+            // Yearly subtotal
+            html += totalsRow(y + ' 年合計（' + yearTotal.count + ' 人次）', yearTotal, 'year-total-row');
+        }
+
+        // Grand total
+        html += totalsRow('總合計（' + grandTotal.count + ' 人次）', grandTotal, 'total-row');
+    } else {
+        // Single month view (original behavior)
+        filtered.sort((a, b) => (a.empName || '').localeCompare(b.empName || ''));
+
+        for (const e of filtered) {
+            const b = calcBreakdown(e);
+            addToTotals(grandTotal, b);
+            html += employeeRow(e, b);
+        }
+
+        html += totalsRow('合計（' + grandTotal.count + ' 人）', grandTotal, 'total-row');
+    }
+
+    tableBody.innerHTML = html;
+
+    // Summary cards always show grand total
+    document.getElementById('sumGrossAll').textContent = fmt(grandTotal.gross);
+    document.getElementById('sumDeductAll').textContent = fmt(grandTotal.deductions);
+    document.getElementById('sumPayoutAll').textContent = fmt(grandTotal.netPay);
+    document.getElementById('sumEmployerAll').textContent = fmt(grandTotal.employer);
+    document.getElementById('sumTotalCost').textContent = fmt(grandTotal.gross + grandTotal.employer);
 }
 
 // ============================================================

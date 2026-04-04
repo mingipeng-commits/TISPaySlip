@@ -28,6 +28,7 @@ const WAGE_FUND_RATE = 0.00025;
 const AVG_DEPENDENTS = 0.56;
 
 const STORAGE_KEY = 'tis_payslip_entries';
+const EMPLOYEES_KEY = 'tis_employees';
 
 function getTiers(min, max) {
     return ALL_TIERS.filter(t => t >= min && t <= max);
@@ -230,6 +231,7 @@ function switchTab(tab) {
     });
     if (tab === 'saved') renderSavedEntries();
     if (tab === 'employer') renderEmployerSummary();
+    if (tab === 'employees') renderEmployeeList();
 }
 
 // ============================================================
@@ -415,6 +417,7 @@ function saveEntry() {
 function resetForm() {
     editingId = null;
     document.getElementById('editingBanner').style.display = 'none';
+    document.getElementById('empSelect').value = '';
     document.querySelectorAll('#tab-entry .money-input').forEach(el => el.value = '0');
     document.querySelectorAll('#tab-entry input[type="text"]:not(.money-input)').forEach(el => el.value = '');
     document.getElementById('voluntaryPensionRate').value = 0;
@@ -597,11 +600,198 @@ function printEmployerSummary() {
 }
 
 // ============================================================
+// Employee Master Data (4th pillar)
+// ============================================================
+function loadEmployees() {
+    try { return JSON.parse(localStorage.getItem(EMPLOYEES_KEY)) || []; }
+    catch { return []; }
+}
+function saveEmployeesData(list) {
+    localStorage.setItem(EMPLOYEES_KEY, JSON.stringify(list));
+}
+
+let editingEmpMasterId = null;
+
+function saveEmployee() {
+    const name = document.getElementById('mEmpName').value.trim();
+    const empId = document.getElementById('mEmpId').value.trim();
+    if (!name) { alert('請填寫員工姓名'); return; }
+    if (!empId) { alert('請填寫員工編號'); return; }
+
+    const data = {
+        empName: name,
+        empId: empId,
+        empDept: document.getElementById('mEmpDept').value.trim(),
+        empTitle: document.getElementById('mEmpTitle').value.trim(),
+        baseSalary: parseMoneyValue(document.getElementById('mBaseSalary').value),
+        mealAllowance: parseMoneyValue(document.getElementById('mMealAllowance').value),
+        transportAllowance: parseMoneyValue(document.getElementById('mTransportAllowance').value),
+        otherAllowance: parseMoneyValue(document.getElementById('mOtherAllowance').value),
+        voluntaryPensionRate: parseInt(document.getElementById('mVoluntaryPensionRate').value) || 0,
+        dependents: parseInt(document.getElementById('mDependents').value) || 0,
+    };
+
+    const employees = loadEmployees();
+
+    if (editingEmpMasterId) {
+        const idx = employees.findIndex(e => e.id === editingEmpMasterId);
+        if (idx >= 0) {
+            data.id = editingEmpMasterId;
+            data.updatedAt = new Date().toISOString();
+            data.createdAt = employees[idx].createdAt;
+            employees[idx] = data;
+        }
+    } else {
+        data.id = generateId();
+        data.createdAt = new Date().toISOString();
+        data.updatedAt = data.createdAt;
+        employees.push(data);
+    }
+
+    saveEmployeesData(employees);
+    editingEmpMasterId = null;
+    document.getElementById('empEditBanner').style.display = 'none';
+    alert('員工資料已儲存！');
+    resetEmployeeForm();
+    renderEmployeeList();
+    populateEmployeeSelect();
+}
+
+function resetEmployeeForm() {
+    editingEmpMasterId = null;
+    document.getElementById('empEditBanner').style.display = 'none';
+    document.getElementById('mEmpName').value = '';
+    document.getElementById('mEmpId').value = '';
+    document.getElementById('mEmpDept').value = '';
+    document.getElementById('mEmpTitle').value = '';
+    document.querySelectorAll('#tab-employees .money-input').forEach(el => el.value = '0');
+    document.getElementById('mVoluntaryPensionRate').value = 0;
+    document.getElementById('mDependents').value = 0;
+}
+
+function renderEmployeeList() {
+    const employees = loadEmployees();
+    const body = document.getElementById('employeeListBody');
+
+    if (employees.length === 0) {
+        body.innerHTML = '<tr><td colspan="11" class="empty-state"><div class="empty-icon">&#128101;</div><p>尚無員工資料，請新增員工</p></td></tr>';
+        return;
+    }
+
+    employees.sort((a, b) => (a.empId || '').localeCompare(b.empId || ''));
+
+    body.innerHTML = employees.map(e => {
+        return '<tr>' +
+            '<td>' + (e.empId || '-') + '</td>' +
+            '<td style="font-weight:600">' + (e.empName || '-') + '</td>' +
+            '<td>' + (e.empDept || '-') + '</td>' +
+            '<td>' + (e.empTitle || '-') + '</td>' +
+            '<td class="amount">' + fmt(e.baseSalary || 0) + '</td>' +
+            '<td class="amount">' + fmt(e.mealAllowance || 0) + '</td>' +
+            '<td class="amount">' + fmt(e.transportAllowance || 0) + '</td>' +
+            '<td class="amount">' + fmt(e.otherAllowance || 0) + '</td>' +
+            '<td>' + (e.voluntaryPensionRate || 0) + '%</td>' +
+            '<td>' + (e.dependents || 0) + '人</td>' +
+            '<td><div class="actions-cell">' +
+                '<button class="btn btn-sm btn-primary" onclick="editEmployee(\'' + e.id + '\')">編輯</button>' +
+                '<button class="btn btn-sm btn-danger" onclick="deleteEmployee(\'' + e.id + '\')">刪除</button>' +
+            '</div></td>' +
+        '</tr>';
+    }).join('');
+}
+
+function editEmployee(id) {
+    const employees = loadEmployees();
+    const emp = employees.find(e => e.id === id);
+    if (!emp) return;
+    editingEmpMasterId = id;
+    document.getElementById('mEmpName').value = emp.empName || '';
+    document.getElementById('mEmpId').value = emp.empId || '';
+    document.getElementById('mEmpDept').value = emp.empDept || '';
+    document.getElementById('mEmpTitle').value = emp.empTitle || '';
+    setMoneyField('mBaseSalary', emp.baseSalary);
+    setMoneyField('mMealAllowance', emp.mealAllowance);
+    setMoneyField('mTransportAllowance', emp.transportAllowance);
+    setMoneyField('mOtherAllowance', emp.otherAllowance);
+    document.getElementById('mVoluntaryPensionRate').value = emp.voluntaryPensionRate || 0;
+    document.getElementById('mDependents').value = emp.dependents || 0;
+    document.getElementById('empEditBanner').style.display = 'block';
+    document.getElementById('empEditBannerText').textContent = '正在編輯：' + emp.empName + '（' + emp.empId + '）';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function deleteEmployee(id) {
+    if (!confirm('確定要刪除此員工資料？')) return;
+    const employees = loadEmployees().filter(e => e.id !== id);
+    saveEmployeesData(employees);
+    renderEmployeeList();
+    populateEmployeeSelect();
+}
+
+// ============================================================
+// Employee Select Dropdown (on payslip entry tab)
+// ============================================================
+function populateEmployeeSelect() {
+    const select = document.getElementById('empSelect');
+    const employees = loadEmployees();
+    const currentVal = select.value;
+    select.innerHTML = '<option value="">-- 請選擇員工 --</option>';
+    employees.sort((a, b) => (a.empId || '').localeCompare(b.empId || ''));
+    employees.forEach(e => {
+        const opt = document.createElement('option');
+        opt.value = e.id;
+        opt.textContent = e.empId + ' — ' + e.empName;
+        select.appendChild(opt);
+    });
+    // Restore selection if still valid
+    if (currentVal && employees.some(e => e.id === currentVal)) {
+        select.value = currentVal;
+    }
+}
+
+function onEmployeeSelect() {
+    const select = document.getElementById('empSelect');
+    const empMasterId = select.value;
+    if (!empMasterId) {
+        // Clear employee fields
+        document.getElementById('empName').value = '';
+        document.getElementById('empId').value = '';
+        document.getElementById('empDept').value = '';
+        document.getElementById('empTitle').value = '';
+        return;
+    }
+    const employees = loadEmployees();
+    const emp = employees.find(e => e.id === empMasterId);
+    if (!emp) return;
+
+    // Fill employee info fields
+    document.getElementById('empName').value = emp.empName || '';
+    document.getElementById('empId').value = emp.empId || '';
+    document.getElementById('empDept').value = emp.empDept || '';
+    document.getElementById('empTitle').value = emp.empTitle || '';
+
+    // Fill salary defaults from master
+    setMoneyField('baseSalary', emp.baseSalary);
+    setMoneyField('mealAllowance', emp.mealAllowance);
+    setMoneyField('transportAllowance', emp.transportAllowance);
+    setMoneyField('otherAllowance', emp.otherAllowance);
+
+    // Fill insurance settings
+    document.getElementById('voluntaryPensionRate').value = emp.voluntaryPensionRate || 0;
+    document.getElementById('dependents').value = emp.dependents || 0;
+
+    // Auto-suggest tiers based on loaded salary
+    suggestTiers();
+    updatePayslip();
+}
+
+// ============================================================
 // Init
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
     initSelects();
     initMoneyInputs();
+    populateEmployeeSelect();
     updateClock();
     setInterval(updateClock, 1000);
 

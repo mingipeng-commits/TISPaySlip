@@ -20,6 +20,7 @@
     <button class="tab-btn active" data-tab="entry" onclick="switchTab('entry')">&#128221; 薪資輸入</button>
     <button class="tab-btn" data-tab="saved" onclick="switchTab('saved')">&#128196; 已儲存記錄</button>
     <button class="tab-btn" data-tab="employer" onclick="switchTab('employer')">&#127970; 雇主總覽</button>
+    <button class="tab-btn" data-tab="employees" onclick="switchTab('employees')">&#128101; 員工管理</button>
 </div>
 
 <!-- ==================== TAB 1: Entry Form ==================== -->
@@ -38,13 +39,21 @@
             <div class="card">
                 <div class="card-header"><span class="icon">&#128100;</span> 員工資料</div>
                 <div class="card-body">
-                    <div class="form-row">
-                        <div class="form-group"><label>員工姓名</label><input type="text" id="empName" placeholder="王小明"></div>
-                        <div class="form-group"><label>員工編號</label><input type="text" id="empId" placeholder="TIS-001"></div>
+                    <div class="form-row single">
+                        <div class="form-group">
+                            <label>選擇員工（從員工管理中載入）</label>
+                            <select id="empSelect" onchange="onEmployeeSelect()">
+                                <option value="">-- 請選擇員工 --</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="form-row">
-                        <div class="form-group"><label>部門</label><input type="text" id="empDept" placeholder="研發部"></div>
-                        <div class="form-group"><label>職稱</label><input type="text" id="empTitle" placeholder="軟體工程師"></div>
+                        <div class="form-group"><label>員工姓名</label><input type="text" id="empName" placeholder="王小明" readonly class="readonly-field"></div>
+                        <div class="form-group"><label>員工編號</label><input type="text" id="empId" placeholder="TIS-001" readonly class="readonly-field"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>部門</label><input type="text" id="empDept" placeholder="研發部" readonly class="readonly-field"></div>
+                        <div class="form-group"><label>職稱</label><input type="text" id="empTitle" placeholder="軟體工程師" readonly class="readonly-field"></div>
                     </div>
                     <div class="form-row">
                         <div class="form-group"><label>薪資年月</label><input type="month" id="payPeriod"></div>
@@ -269,6 +278,96 @@
                     </thead>
                     <tbody id="employerTableBody"></tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== TAB 4: Employee Master Data ==================== -->
+<div class="tab-content" id="tab-employees">
+    <div class="full-width">
+        <div class="container" style="grid-template-columns: 420px 1fr;">
+            <!-- Employee Form -->
+            <div class="form-panel">
+                <div id="empEditBanner" class="card" style="display:none; border-color: var(--warning);">
+                    <div class="card-body" style="background:#fef9e7; display:flex; justify-content:space-between; align-items:center;">
+                        <span id="empEditBannerText" style="font-weight:600; color:#7d6608;"></span>
+                        <button class="btn btn-sm btn-secondary" onclick="resetEmployeeForm()">取消編輯</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><span class="icon">&#128100;</span> 員工基本資料</div>
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="form-group"><label>員工姓名 *</label><input type="text" id="mEmpName" placeholder="王小明"></div>
+                            <div class="form-group"><label>員工編號 *</label><input type="text" id="mEmpId" placeholder="TIS-001"></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label>部門</label><input type="text" id="mEmpDept" placeholder="研發部"></div>
+                            <div class="form-group"><label>職稱</label><input type="text" id="mEmpTitle" placeholder="軟體工程師"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><span class="icon">&#128176;</span> 固定薪資項目</div>
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="form-group"><label>本薪</label><input type="text" class="money-input" id="mBaseSalary" value="0" inputmode="numeric"></div>
+                            <div class="form-group"><label>伙食津貼</label><input type="text" class="money-input" id="mMealAllowance" value="0" inputmode="numeric"></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label>交通津貼</label><input type="text" class="money-input" id="mTransportAllowance" value="0" inputmode="numeric"></div>
+                            <div class="form-group"><label>其他津貼</label><input type="text" class="money-input" id="mOtherAllowance" value="0" inputmode="numeric"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><span class="icon">&#128203;</span> 保險及勞退設定</div>
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>勞退自提比例</label>
+                                <select id="mVoluntaryPensionRate">
+                                    <option value="0">0%（不自提）</option>
+                                    <option value="1">1%</option><option value="2">2%</option>
+                                    <option value="3">3%</option><option value="4">4%</option>
+                                    <option value="5">5%</option><option value="6">6%</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>健保眷屬人數</label>
+                                <select id="mDependents">
+                                    <option value="0">0 人</option><option value="1">1 人</option>
+                                    <option value="2">2 人</option><option value="3">3 人</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="actions-bar">
+                    <button class="btn btn-success btn-flex" onclick="saveEmployee()">&#128190; 儲存員工</button>
+                    <button class="btn btn-secondary btn-flex" onclick="resetEmployeeForm()">&#128260; 重置</button>
+                </div>
+            </div>
+
+            <!-- Employee List -->
+            <div>
+                <div class="card">
+                    <div class="card-header"><span class="icon">&#128101;</span> 員工名冊</div>
+                    <div class="card-body" style="padding:0; overflow-x:auto;">
+                        <table class="entries-table">
+                            <thead>
+                                <tr>
+                                    <th>編號</th><th>姓名</th><th>部門</th><th>職稱</th>
+                                    <th class="amount">本薪</th><th class="amount">伙食</th>
+                                    <th class="amount">交通</th><th class="amount">其他</th>
+                                    <th>自提</th><th>眷屬</th><th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="employeeListBody"></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

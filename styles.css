@@ -123,6 +123,7 @@ body {
 }
 .form-group input[type="number"] { text-align: right; }
 .form-group .money-input { text-align: right; font-variant-numeric: tabular-nums; }
+.form-group .readonly-field { background: #f0f2f5; color: var(--text-light); cursor: not-allowed; }
 
 .tier-info {
     background: #f0f7ff;

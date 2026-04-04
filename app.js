@@ -802,9 +802,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('filterMonth').value = ym;
     document.getElementById('summaryMonth').value = ym;
 
-    // Auto-suggest tiers when salary fields change
+    // Auto-suggest tiers when salary fields change (input, change, and blur)
     ['baseSalary', 'mealAllowance', 'otherAllowance'].forEach(id => {
-        document.getElementById(id).addEventListener('input', () => { suggestTiers(); updatePayslip(); });
+        const el = document.getElementById(id);
+        el.addEventListener('input', () => { suggestTiers(); updatePayslip(); });
+        el.addEventListener('change', () => { suggestTiers(); updatePayslip(); });
+        el.addEventListener('blur', () => { suggestTiers(); updatePayslip(); });
     });
 
     // Update payslip on any input change

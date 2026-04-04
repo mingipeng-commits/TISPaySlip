@@ -31,6 +31,7 @@ body {
     align-items: center;
 }
 .app-header h1 { font-size: 20px; font-weight: 600; }
+.version-tag { font-size: 11px; opacity: 0.6; margin-top: 2px; letter-spacing: 0.5px; }
 .header-clock {
     font-size: 15px;
     font-weight: 600;

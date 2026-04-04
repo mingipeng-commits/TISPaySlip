@@ -27,8 +27,7 @@ const OCCUPATIONAL_RATE = 0.0011;
 const WAGE_FUND_RATE = 0.00025;
 const AVG_DEPENDENTS = 0.56;
 
-const STORAGE_KEY = 'tis_payslip_entries';
-const EMPLOYEES_KEY = 'tis_employees';
+// Data is now stored on the server via REST API (see server.js)
 
 function getTiers(min, max) {
     return ALL_TIERS.filter(t => t >= min && t <= max);
@@ -103,18 +102,29 @@ function calcBreakdown(e) {
 }
 
 // ============================================================
-// Storage
+// Storage (Server API)
 // ============================================================
-function loadEntries() {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
-    catch { return []; }
+// In-memory cache, synced with server
+let _entriesCache = [];
+let _employeesCache = [];
+
+async function loadEntries() {
+    try {
+        const res = await fetch('/api/entries');
+        _entriesCache = await res.json();
+    } catch { _entriesCache = []; }
+    return _entriesCache;
 }
-function saveEntries(entries) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+function getEntriesCache() { return _entriesCache; }
+
+async function loadEmployees() {
+    try {
+        const res = await fetch('/api/employees');
+        _employeesCache = await res.json();
+    } catch { _employeesCache = []; }
+    return _employeesCache;
 }
-function generateId() {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-}
+function getEmployeesCache() { return _employeesCache; }
 
 // ============================================================
 // UI Helpers
@@ -382,33 +392,34 @@ let editingId = null;
 // ============================================================
 // Save Entry
 // ============================================================
-function saveEntry() {
+async function saveEntry() {
     const data = readFormData();
     if (!data.empName) { alert('請填寫員工姓名'); return; }
     if (!data.payPeriod) { alert('請選擇薪資年月'); return; }
     if (data.baseSalary <= 0) { alert('請填寫本薪'); return; }
 
-    const entries = loadEntries();
-
-    if (editingId) {
-        const idx = entries.findIndex(e => e.id === editingId);
-        if (idx >= 0) {
-            data.id = editingId;
-            data.updatedAt = new Date().toISOString();
-            data.createdAt = entries[idx].createdAt;
-            entries[idx] = data;
+    try {
+        let saved;
+        if (editingId) {
+            const res = await fetch('/api/entries/' + editingId, {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            saved = await res.json();
+        } else {
+            const res = await fetch('/api/entries', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            saved = await res.json();
         }
-    } else {
-        data.id = generateId();
-        data.createdAt = new Date().toISOString();
-        data.updatedAt = data.createdAt;
-        entries.push(data);
+        await loadEntries(); // refresh cache
+        editingId = null;
+        document.getElementById('editingBanner').style.display = 'none';
+        alert('薪資條已儲存！（' + fmtDateTime(saved.updatedAt) + '）');
+    } catch (err) {
+        alert('儲存失敗：' + err.message);
     }
-
-    saveEntries(entries);
-    editingId = null;
-    document.getElementById('editingBanner').style.display = 'none';
-    alert('薪資條已儲存！（' + fmtDateTime(data.updatedAt) + '）');
 }
 
 // ============================================================
@@ -432,8 +443,8 @@ function resetForm() {
 // ============================================================
 // Saved Entries Tab
 // ============================================================
-function renderSavedEntries() {
-    const entries = loadEntries();
+async function renderSavedEntries() {
+    const entries = await loadEntries();
     const container = document.getElementById('savedEntriesBody');
     const filterMonth = document.getElementById('filterMonth').value;
 
@@ -466,8 +477,8 @@ function renderSavedEntries() {
     }).join('');
 }
 
-function editEntry(id) {
-    const entries = loadEntries();
+async function editEntry(id) {
+    const entries = await loadEntries();
     const entry = entries.find(e => e.id === id);
     if (!entry) return;
     editingId = id;
@@ -478,16 +489,19 @@ function editEntry(id) {
     switchTab('entry');
 }
 
-function deleteEntry(id) {
+async function deleteEntry(id) {
     if (!confirm('確定要刪除此筆記錄？')) return;
-    const entries = loadEntries().filter(e => e.id !== id);
-    saveEntries(entries);
-    renderSavedEntries();
+    try {
+        await fetch('/api/entries/' + id, { method: 'DELETE' });
+        await loadEntries();
+        renderSavedEntries();
+    } catch (err) {
+        alert('刪除失敗：' + err.message);
+    }
 }
 
 function printSavedEntry(id) {
-    const entries = loadEntries();
-    const entry = entries.find(e => e.id === id);
+    const entry = getEntriesCache().find(e => e.id === id);
     if (!entry) return;
     printEntryPayslip(entry);
 }
@@ -561,8 +575,8 @@ function employeeRow(e, b) {
     '</tr>';
 }
 
-function renderEmployerSummary() {
-    const entries = loadEntries();
+async function renderEmployerSummary() {
+    const entries = await loadEntries();
     const summaryMonth = document.getElementById('summaryMonth').value;
     const filtered = summaryMonth ? entries.filter(e => e.payPeriod === summaryMonth) : entries;
     const isViewAll = !summaryMonth;
@@ -661,17 +675,10 @@ function printEmployerSummary() {
 // ============================================================
 // Employee Master Data (4th pillar)
 // ============================================================
-function loadEmployees() {
-    try { return JSON.parse(localStorage.getItem(EMPLOYEES_KEY)) || []; }
-    catch { return []; }
-}
-function saveEmployeesData(list) {
-    localStorage.setItem(EMPLOYEES_KEY, JSON.stringify(list));
-}
 
 let editingEmpMasterId = null;
 
-function saveEmployee() {
+async function saveEmployee() {
     const name = document.getElementById('mEmpName').value.trim();
     const empId = document.getElementById('mEmpId').value.trim();
     if (!name) { alert('請填寫員工姓名'); return; }
@@ -690,30 +697,28 @@ function saveEmployee() {
         dependents: parseInt(document.getElementById('mDependents').value) || 0,
     };
 
-    const employees = loadEmployees();
-
-    if (editingEmpMasterId) {
-        const idx = employees.findIndex(e => e.id === editingEmpMasterId);
-        if (idx >= 0) {
-            data.id = editingEmpMasterId;
-            data.updatedAt = new Date().toISOString();
-            data.createdAt = employees[idx].createdAt;
-            employees[idx] = data;
+    try {
+        if (editingEmpMasterId) {
+            await fetch('/api/employees/' + editingEmpMasterId, {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+        } else {
+            await fetch('/api/employees', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
         }
-    } else {
-        data.id = generateId();
-        data.createdAt = new Date().toISOString();
-        data.updatedAt = data.createdAt;
-        employees.push(data);
+        await loadEmployees();
+        editingEmpMasterId = null;
+        document.getElementById('empEditBanner').style.display = 'none';
+        alert('員工資料已儲存！');
+        resetEmployeeForm();
+        renderEmployeeList();
+        populateEmployeeSelect();
+    } catch (err) {
+        alert('儲存失敗：' + err.message);
     }
-
-    saveEmployeesData(employees);
-    editingEmpMasterId = null;
-    document.getElementById('empEditBanner').style.display = 'none';
-    alert('員工資料已儲存！');
-    resetEmployeeForm();
-    renderEmployeeList();
-    populateEmployeeSelect();
 }
 
 function resetEmployeeForm() {
@@ -729,7 +734,7 @@ function resetEmployeeForm() {
 }
 
 function renderEmployeeList() {
-    const employees = loadEmployees();
+    const employees = getEmployeesCache();
     const body = document.getElementById('employeeListBody');
 
     if (employees.length === 0) {
@@ -760,7 +765,7 @@ function renderEmployeeList() {
 }
 
 function editEmployee(id) {
-    const employees = loadEmployees();
+    const employees = getEmployeesCache();
     const emp = employees.find(e => e.id === id);
     if (!emp) return;
     editingEmpMasterId = id;
@@ -779,12 +784,16 @@ function editEmployee(id) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function deleteEmployee(id) {
+async function deleteEmployee(id) {
     if (!confirm('確定要刪除此員工資料？')) return;
-    const employees = loadEmployees().filter(e => e.id !== id);
-    saveEmployeesData(employees);
-    renderEmployeeList();
-    populateEmployeeSelect();
+    try {
+        await fetch('/api/employees/' + id, { method: 'DELETE' });
+        await loadEmployees();
+        renderEmployeeList();
+        populateEmployeeSelect();
+    } catch (err) {
+        alert('刪除失敗：' + err.message);
+    }
 }
 
 // ============================================================
@@ -792,7 +801,7 @@ function deleteEmployee(id) {
 // ============================================================
 function populateEmployeeSelect() {
     const select = document.getElementById('empSelect');
-    const employees = loadEmployees();
+    const employees = getEmployeesCache();
     const currentVal = select.value;
     select.innerHTML = '<option value="">-- 請選擇員工 --</option>';
     employees.sort((a, b) => (a.empId || '').localeCompare(b.empId || ''));
@@ -812,14 +821,13 @@ function onEmployeeSelect() {
     const select = document.getElementById('empSelect');
     const empMasterId = select.value;
     if (!empMasterId) {
-        // Clear employee fields
         document.getElementById('empName').value = '';
         document.getElementById('empId').value = '';
         document.getElementById('empDept').value = '';
         document.getElementById('empTitle').value = '';
         return;
     }
-    const employees = loadEmployees();
+    const employees = getEmployeesCache();
     const emp = employees.find(e => e.id === empMasterId);
     if (!emp) return;
 
@@ -847,10 +855,15 @@ function onEmployeeSelect() {
 // ============================================================
 // Init
 // ============================================================
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     initSelects();
     initMoneyInputs();
+
+    // Load data from server
+    await loadEmployees();
+    await loadEntries();
     populateEmployeeSelect();
+
     updateClock();
     setInterval(updateClock, 1000);
 

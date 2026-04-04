@@ -7,6 +7,18 @@
 
 ---
 
+## Ver. 2.0.0 — 2026-04-04 09:15
+
+- **重大架構升級：前後端分離，資料改為伺服器端統一儲存**
+- 新增 Node.js / Express 後端伺服器（server.js）
+- 資料儲存從瀏覽器 localStorage 遷移至伺服器端 JSON 檔案（data/）
+- 新增 REST API：員工 CRUD（/api/employees）、薪資條 CRUD（/api/entries）
+- 前端 app.js 所有存取改為非同步 fetch API 呼叫
+- 任何裝置瀏覽同一伺服器網址即可共享所有資料
+- 新增、編輯、刪除操作即時同步至伺服器
+- 新增 package.json、.gitignore（排除 node_modules/ 及 data/）
+- 啟動方式：`npm install && npm start`（預設 http://localhost:3000）
+
 ## Ver. 1.4.0 — 2026-04-04 09:00
 
 - 雇主總覽「顯示全部」模式新增兩層彙總：

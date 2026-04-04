@@ -1,4 +1,33 @@
 // ============================================================
+// Holiday Bonus Calendar (農曆節日對應月份)
+// 端午節 & 中秋節: bonus = 1 month base salary, paid with that month
+// 農曆春節 (CNY year-end bonus): always paid with January salary
+// These bonuses are categorized as 獎金, do NOT affect 勞保/健保/勞退
+// ============================================================
+const HOLIDAY_BONUS_MAP = {
+    // { year: { month: [bonus_names] } }
+    2026: { 1: ['農曆春節'], 6: ['端午節'], 9: ['中秋節'] },
+    2027: { 1: ['農曆春節'], 6: ['端午節'], 9: ['中秋節'] },
+    2028: { 1: ['農曆春節'], 5: ['端午節'], 10: ['中秋節'] },
+    2029: { 1: ['農曆春節'], 6: ['端午節'], 9: ['中秋節'] },
+    2030: { 1: ['農曆春節'], 6: ['端午節'], 9: ['中秋節'] },
+};
+
+function getHolidayBonuses(yearMonth) {
+    if (!yearMonth) return [];
+    const [y, m] = yearMonth.split('-').map(Number);
+    const yearData = HOLIDAY_BONUS_MAP[y];
+    if (!yearData) return [];
+    return yearData[m] || [];
+}
+
+function calcHolidayBonusAmount(baseSalary, yearMonth) {
+    const holidays = getHolidayBonuses(yearMonth);
+    // Each holiday = 1 month base salary
+    return baseSalary * holidays.length;
+}
+
+// ============================================================
 // 2026 Insurance Tier Data
 // ============================================================
 const ALL_TIERS = [
@@ -722,9 +751,30 @@ function onEmployeeSelect() {
     document.getElementById('voluntaryPensionRate').value = emp.voluntaryPensionRate || 0;
     document.getElementById('dependents').value = emp.dependents || 0;
 
+    // Auto-fill holiday bonus
+    applyHolidayBonus(emp.baseSalary);
+
     // Auto-suggest tiers based on loaded salary
     suggestTiers();
     updatePayslip();
+}
+
+function applyHolidayBonus(baseSalary) {
+    const yearMonth = document.getElementById('payPeriod').value;
+    const holidays = getHolidayBonuses(yearMonth);
+    const bonusAmount = (baseSalary || 0) * holidays.length;
+    setMoneyField('bonus', bonusAmount);
+
+    const infoEl = document.getElementById('bonusInfo');
+    if (holidays.length > 0) {
+        infoEl.style.display = 'block';
+        infoEl.innerHTML = '&#127881; 本月含節日獎金：' + holidays.join('、') +
+            '（各一個月本薪 $' + (baseSalary || 0).toLocaleString() + '，' +
+            '共 $' + bonusAmount.toLocaleString() + '）<br>' +
+            '<small style="opacity:0.8">節日獎金屬於獎金，不影響勞保、健保、勞退計算。</small>';
+    } else {
+        infoEl.style.display = 'none';
+    }
 }
 
 // ============================================================
@@ -747,6 +797,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('payPeriod').value = ym;
     document.getElementById('filterMonth').value = ym;
     document.getElementById('summaryMonth').value = ym;
+
+    // Re-check holiday bonus when pay period changes
+    document.getElementById('payPeriod').addEventListener('change', () => {
+        const baseSalary = parseMoneyValue(document.getElementById('baseSalary').value);
+        applyHolidayBonus(baseSalary);
+        updatePayslip();
+    });
 
     // Auto-suggest tiers when salary fields change (input, change, and blur)
     ['baseSalary', 'mealAllowance', 'otherAllowance'].forEach(id => {

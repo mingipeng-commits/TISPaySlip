@@ -11,8 +11,8 @@ function setMoneyField(id, val) {
     const v = val || 0;
     document.getElementById(id).value = v === 0 ? '0' : formatWithCommas(v);
 }
+function getField(id) { return (document.getElementById(id).value || '').trim(); }
 
-// Money input formatting
 function initMoneyInputs() {
     document.querySelectorAll('.money-input').forEach(input => {
         input.addEventListener('focus', function() {
@@ -43,25 +43,62 @@ async function loadEmployees() {
 
 let editingEmpId = null;
 
-async function saveEmployee() {
-    const name = document.getElementById('mEmpName').value.trim();
-    const empId = document.getElementById('mEmpId').value.trim();
-    if (!name) { alert('請填寫員工姓名'); return; }
-    if (!empId) { alert('請填寫員工編號'); return; }
-
-    const data = {
-        empName: name, empId: empId,
-        empDept: document.getElementById('mEmpDept').value.trim(),
-        empTitle: document.getElementById('mEmpTitle').value.trim(),
-        startDate: document.getElementById('mStartDate').value,
-        status: document.getElementById('mStatus').value,
+// All fields for employee record
+function readEmployeeForm() {
+    return {
+        empName: getField('mEmpName'), empId: getField('mEmpId'),
+        empDept: getField('mEmpDept'), empTitle: getField('mEmpTitle'),
+        idNumber: getField('mIdNumber'), contractType: getField('mContractType'),
+        startDate: getField('mStartDate'), status: getField('mStatus'),
+        endDate: getField('mEndDate'),
+        phone: getField('mPhone'), email: getField('mEmail'), address: getField('mAddress'),
+        emergencyName: getField('mEmergencyName'),
+        emergencyRelation: getField('mEmergencyRelation'),
+        emergencyPhone: getField('mEmergencyPhone'),
+        bankName: getField('mBankName'), bankBranch: getField('mBankBranch'),
+        bankAccount: getField('mBankAccount'),
         baseSalary: parseMoneyValue(document.getElementById('mBaseSalary').value),
         mealAllowance: parseMoneyValue(document.getElementById('mMealAllowance').value),
         transportAllowance: parseMoneyValue(document.getElementById('mTransportAllowance').value),
         otherAllowance: parseMoneyValue(document.getElementById('mOtherAllowance').value),
         voluntaryPensionRate: parseInt(document.getElementById('mVoluntaryPensionRate').value) || 0,
         dependents: parseInt(document.getElementById('mDependents').value) || 0,
+        notes: getField('mNotes'),
     };
+}
+
+function writeEmployeeForm(e) {
+    document.getElementById('mEmpName').value = e.empName || '';
+    document.getElementById('mEmpId').value = e.empId || '';
+    document.getElementById('mEmpDept').value = e.empDept || '';
+    document.getElementById('mEmpTitle').value = e.empTitle || '';
+    document.getElementById('mIdNumber').value = e.idNumber || '';
+    document.getElementById('mContractType').value = e.contractType || 'full-time';
+    document.getElementById('mStartDate').value = e.startDate || '';
+    document.getElementById('mStatus').value = e.status || 'active';
+    document.getElementById('mEndDate').value = e.endDate || '';
+    document.getElementById('mPhone').value = e.phone || '';
+    document.getElementById('mEmail').value = e.email || '';
+    document.getElementById('mAddress').value = e.address || '';
+    document.getElementById('mEmergencyName').value = e.emergencyName || '';
+    document.getElementById('mEmergencyRelation').value = e.emergencyRelation || '';
+    document.getElementById('mEmergencyPhone').value = e.emergencyPhone || '';
+    document.getElementById('mBankName').value = e.bankName || '';
+    document.getElementById('mBankBranch').value = e.bankBranch || '';
+    document.getElementById('mBankAccount').value = e.bankAccount || '';
+    setMoneyField('mBaseSalary', e.baseSalary);
+    setMoneyField('mMealAllowance', e.mealAllowance);
+    setMoneyField('mTransportAllowance', e.transportAllowance);
+    setMoneyField('mOtherAllowance', e.otherAllowance);
+    document.getElementById('mVoluntaryPensionRate').value = e.voluntaryPensionRate || 0;
+    document.getElementById('mDependents').value = e.dependents || 0;
+    document.getElementById('mNotes').value = e.notes || '';
+}
+
+async function saveEmployee() {
+    const data = readEmployeeForm();
+    if (!data.empName) { alert('請填寫員工姓名'); return; }
+    if (!data.empId) { alert('請填寫員工編號'); return; }
 
     try {
         if (editingEmpId) {
@@ -87,11 +124,11 @@ async function saveEmployee() {
 function resetEmployeeForm() {
     editingEmpId = null;
     document.getElementById('empEditBanner').style.display = 'none';
-    document.getElementById('mEmpName').value = '';
-    document.getElementById('mEmpId').value = '';
-    document.getElementById('mEmpDept').value = '';
-    document.getElementById('mEmpTitle').value = '';
-    document.getElementById('mStartDate').value = '';
+    const fields = ['mEmpName','mEmpId','mEmpDept','mEmpTitle','mIdNumber','mStartDate',
+        'mEndDate','mPhone','mEmail','mAddress','mEmergencyName','mEmergencyRelation',
+        'mEmergencyPhone','mBankName','mBankBranch','mBankAccount','mNotes'];
+    fields.forEach(id => document.getElementById(id).value = '');
+    document.getElementById('mContractType').value = 'full-time';
     document.getElementById('mStatus').value = 'active';
     document.querySelectorAll('.money-input').forEach(el => el.value = '0');
     document.getElementById('mVoluntaryPensionRate').value = 0;
@@ -112,25 +149,24 @@ function renderEmployeeList() {
     renderStats();
     const body = document.getElementById('employeeListBody');
     if (_employees.length === 0) {
-        body.innerHTML = '<tr><td colspan="13" style="text-align:center;padding:48px;color:#7f8c8d;"><div style="font-size:48px;">&#128101;</div><p>尚無員工資料，請新增員工</p></td></tr>';
+        body.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:48px;color:#7f8c8d;"><div style="font-size:48px;">&#128101;</div><p>尚無員工資料，請新增員工</p></td></tr>';
         return;
     }
     const sorted = [..._employees].sort((a, b) => (a.empId || '').localeCompare(b.empId || ''));
+    const typeMap = { 'full-time': '全職', 'part-time': '兼職', 'contract': '約聘' };
     body.innerHTML = sorted.map(e => {
-        const statusLabel = e.status === 'inactive' ? '<span style="color:#e74c3c;font-weight:600;">離職</span>' : '<span style="color:#27ae60;font-weight:600;">在職</span>';
+        const statusLabel = e.status === 'inactive'
+            ? '<span style="color:#e74c3c;font-weight:600;">離職</span>'
+            : '<span style="color:#27ae60;font-weight:600;">在職</span>';
         return '<tr' + (e.status === 'inactive' ? ' style="opacity:0.5"' : '') + '>' +
             '<td>' + (e.empId || '-') + '</td>' +
             '<td style="font-weight:600">' + (e.empName || '-') + '</td>' +
             '<td>' + (e.empDept || '-') + '</td>' +
             '<td>' + (e.empTitle || '-') + '</td>' +
+            '<td>' + (typeMap[e.contractType] || '全職') + '</td>' +
             '<td>' + (e.startDate || '-') + '</td>' +
             '<td>' + statusLabel + '</td>' +
             '<td class="amount">' + fmt(e.baseSalary || 0) + '</td>' +
-            '<td class="amount">' + fmt(e.mealAllowance || 0) + '</td>' +
-            '<td class="amount">' + fmt(e.transportAllowance || 0) + '</td>' +
-            '<td class="amount">' + fmt(e.otherAllowance || 0) + '</td>' +
-            '<td>' + (e.voluntaryPensionRate || 0) + '%</td>' +
-            '<td>' + (e.dependents || 0) + '人</td>' +
             '<td><div style="display:flex;gap:6px;white-space:nowrap;">' +
                 '<button class="btn btn-sm btn-primary" onclick="editEmployee(\'' + e.id + '\')">編輯</button>' +
                 '<button class="btn btn-sm btn-danger" onclick="deleteEmployee(\'' + e.id + '\')">刪除</button>' +
@@ -143,18 +179,7 @@ function editEmployee(id) {
     const emp = _employees.find(e => e.id === id);
     if (!emp) return;
     editingEmpId = id;
-    document.getElementById('mEmpName').value = emp.empName || '';
-    document.getElementById('mEmpId').value = emp.empId || '';
-    document.getElementById('mEmpDept').value = emp.empDept || '';
-    document.getElementById('mEmpTitle').value = emp.empTitle || '';
-    document.getElementById('mStartDate').value = emp.startDate || '';
-    document.getElementById('mStatus').value = emp.status || 'active';
-    setMoneyField('mBaseSalary', emp.baseSalary);
-    setMoneyField('mMealAllowance', emp.mealAllowance);
-    setMoneyField('mTransportAllowance', emp.transportAllowance);
-    setMoneyField('mOtherAllowance', emp.otherAllowance);
-    document.getElementById('mVoluntaryPensionRate').value = emp.voluntaryPensionRate || 0;
-    document.getElementById('mDependents').value = emp.dependents || 0;
+    writeEmployeeForm(emp);
     document.getElementById('empEditBanner').style.display = 'block';
     document.getElementById('empEditBannerText').textContent = '正在編輯：' + emp.empName + '（' + emp.empId + '）';
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -169,7 +194,6 @@ async function deleteEmployee(id) {
     } catch (err) { alert('刪除失敗：' + err.message); }
 }
 
-// Init
 document.addEventListener('DOMContentLoaded', async () => {
     initMoneyInputs();
     await loadEmployees();

@@ -21,10 +21,9 @@
 </div>
 
 <div class="full-width" style="max-width:1200px; margin:0 auto; padding:24px;">
-    <!-- Stats -->
     <div class="people-stats" id="peopleStats"></div>
 
-    <div style="display:grid; grid-template-columns:420px 1fr; gap:24px; align-items:start;">
+    <div style="display:grid; grid-template-columns:460px 1fr; gap:24px; align-items:start;">
         <!-- Employee Form -->
         <div class="form-panel">
             <div id="empEditBanner" class="card" style="display:none; border-color: #f39c12;">
@@ -33,8 +32,10 @@
                     <button class="btn btn-sm btn-secondary" onclick="resetEmployeeForm()">取消編輯</button>
                 </div>
             </div>
+
+            <!-- Basic Info -->
             <div class="card">
-                <div class="card-header"><span class="icon">&#128100;</span> 員工基本資料</div>
+                <div class="card-header"><span class="icon">&#128100;</span> 基本資料</div>
                 <div class="card-body">
                     <div class="form-row">
                         <div class="form-group"><label>員工姓名 *</label><input type="text" id="mEmpName" placeholder="王小明"></div>
@@ -43,6 +44,17 @@
                     <div class="form-row">
                         <div class="form-group"><label>部門</label><input type="text" id="mEmpDept" placeholder="研發部"></div>
                         <div class="form-group"><label>職稱</label><input type="text" id="mEmpTitle" placeholder="軟體工程師"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>身分證字號</label><input type="text" id="mIdNumber" placeholder="A123456789"></div>
+                        <div class="form-group">
+                            <label>聘僱類型</label>
+                            <select id="mContractType">
+                                <option value="full-time">全職</option>
+                                <option value="part-time">兼職</option>
+                                <option value="contract">約聘</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group"><label>到職日期</label><input type="date" id="mStartDate"></div>
@@ -54,8 +66,56 @@
                             </select>
                         </div>
                     </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>離職日期</label><input type="date" id="mEndDate"></div>
+                        <div class="form-group"></div>
+                    </div>
                 </div>
             </div>
+
+            <!-- Contact Info -->
+            <div class="card">
+                <div class="card-header"><span class="icon">&#128222;</span> 聯絡資訊</div>
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="form-group"><label>手機</label><input type="tel" id="mPhone" placeholder="0912-345-678"></div>
+                        <div class="form-group"><label>電子信箱</label><input type="email" id="mEmail" placeholder="name@example.com"></div>
+                    </div>
+                    <div class="form-row single">
+                        <div class="form-group"><label>通訊地址</label><input type="text" id="mAddress" placeholder="台北市..."></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Emergency Contact -->
+            <div class="card">
+                <div class="card-header"><span class="icon">&#127973;</span> 緊急聯絡人</div>
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="form-group"><label>姓名</label><input type="text" id="mEmergencyName" placeholder="王大明"></div>
+                        <div class="form-group"><label>關係</label><input type="text" id="mEmergencyRelation" placeholder="配偶"></div>
+                    </div>
+                    <div class="form-row single">
+                        <div class="form-group"><label>聯絡電話</label><input type="tel" id="mEmergencyPhone" placeholder="0912-345-678"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bank Account -->
+            <div class="card">
+                <div class="card-header"><span class="icon">&#127974;</span> 薪轉帳戶</div>
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="form-group"><label>銀行名稱</label><input type="text" id="mBankName" placeholder="中國信託"></div>
+                        <div class="form-group"><label>分行</label><input type="text" id="mBankBranch" placeholder="松山分行"></div>
+                    </div>
+                    <div class="form-row single">
+                        <div class="form-group"><label>帳號</label><input type="text" id="mBankAccount" placeholder="012-345-678901"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Salary -->
             <div class="card">
                 <div class="card-header"><span class="icon">&#128176;</span> 固定薪資項目</div>
                 <div class="card-body">
@@ -69,6 +129,8 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Insurance -->
             <div class="card">
                 <div class="card-header"><span class="icon">&#128203;</span> 保險及勞退設定</div>
                 <div class="card-body">
@@ -92,6 +154,17 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Notes -->
+            <div class="card">
+                <div class="card-header"><span class="icon">&#128221;</span> 備註</div>
+                <div class="card-body">
+                    <div class="form-row single">
+                        <div class="form-group"><textarea id="mNotes" rows="3" style="width:100%;padding:8px 10px;border:1px solid #dce1e8;border-radius:6px;font-family:inherit;font-size:14px;resize:vertical;" placeholder="其他備註事項..."></textarea></div>
+                    </div>
+                </div>
+            </div>
+
             <div class="actions-bar">
                 <button class="btn btn-success" style="flex:1" onclick="saveEmployee()">&#128190; 儲存員工</button>
                 <button class="btn btn-secondary" style="flex:1" onclick="resetEmployeeForm()">&#128260; 重置</button>
@@ -107,10 +180,9 @@
                         <thead>
                             <tr>
                                 <th>編號</th><th>姓名</th><th>部門</th><th>職稱</th>
-                                <th>到職日</th><th>狀態</th>
-                                <th class="amount">本薪</th><th class="amount">伙食</th>
-                                <th class="amount">交通</th><th class="amount">其他</th>
-                                <th>自提</th><th>眷屬</th><th>操作</th>
+                                <th>類型</th><th>到職日</th><th>狀態</th>
+                                <th class="amount">本薪</th>
+                                <th>操作</th>
                             </tr>
                         </thead>
                         <tbody id="employeeListBody"></tbody>

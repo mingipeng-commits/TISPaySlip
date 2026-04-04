@@ -26,8 +26,18 @@ body {
     color: white;
     padding: 16px 24px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 .app-header h1 { font-size: 20px; font-weight: 600; }
+.header-clock {
+    font-size: 15px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.9;
+    white-space: nowrap;
+}
 .app-header .subtitle { font-size: 13px; opacity: 0.8; }
 
 .tab-bar {
@@ -139,8 +149,9 @@ body {
     padding: 20px 24px;
     text-align: center;
 }
-.payslip-header .company-name { font-size: 22px; font-weight: 700; letter-spacing: 2px; }
+.payslip-header .company-name { font-size: 18px; font-weight: 700; letter-spacing: 2px; }
 .payslip-header .payslip-title { font-size: 16px; margin-top: 4px; opacity: 0.9; }
+.payslip-header .payslip-taxid { font-size: 12px; margin-top: 2px; opacity: 0.7; }
 
 .payslip-meta {
     display: grid;
@@ -234,6 +245,8 @@ body {
 .entries-table tr:hover { background: #f8f9fb; }
 .entries-table .amount { text-align: right; font-variant-numeric: tabular-nums; }
 .entries-table .actions-cell { white-space: nowrap; display: flex; gap: 6px; }
+
+.timestamp-cell { font-size: 12px; color: var(--text-light); white-space: nowrap; }
 
 .empty-state {
     text-align: center; padding: 48px 24px; color: var(--text-light);

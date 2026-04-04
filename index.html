@@ -11,8 +11,9 @@
 <div class="app-header">
     <div>
         <h1>TIS 薪資條產生器</h1>
-        <div class="subtitle">Payslip Generator - 2026 年適用（民國 115 年）</div>
+        <div class="subtitle">泰然策略解密股份有限公司 Talent Intelligence Strategies | 統編 60331107 | 2026 年適用（民國 115 年）</div>
     </div>
+    <div id="headerClock" class="header-clock"></div>
 </div>
 
 <div class="tab-bar no-print">
@@ -134,8 +135,9 @@
         <div class="payslip-panel">
             <div class="payslip" id="payslipPreview">
                 <div class="payslip-header">
-                    <div class="company-name">TIS</div>
+                    <div class="company-name">泰然策略解密股份有限公司</div>
                     <div class="payslip-title">薪 資 條</div>
+                    <div class="payslip-taxid">統一編號：60331107</div>
                 </div>
                 <div class="payslip-meta">
                     <div class="meta-item"><span class="meta-label">姓名：</span><span class="meta-value" id="pEmpName">-</span></div>
@@ -173,7 +175,9 @@
                 </div>
             </div>
             <div class="actions-bar no-print">
-                <button class="btn btn-primary btn-flex" onclick="printEntryPayslip(readFormData())">&#128424; 列印薪資條</button>
+                <button class="btn btn-success btn-flex" onclick="saveEntry()">&#128190; 儲存</button>
+                <button class="btn btn-primary btn-flex" onclick="exportPayslipPDF()">&#128228; 匯出 PDF</button>
+                <button class="btn btn-secondary btn-flex" onclick="printEntryPayslip(readFormData())">&#128424; 列印</button>
             </div>
         </div>
     </div>
@@ -200,7 +204,7 @@
                             <tr>
                                 <th>薪資月</th><th>姓名</th><th>編號</th>
                                 <th class="amount">應發合計</th><th class="amount">應扣合計</th>
-                                <th class="amount">實發金額</th><th>操作</th>
+                                <th class="amount">實發金額</th><th>儲存時間</th><th>操作</th>
                             </tr>
                         </thead>
                         <tbody id="savedEntriesBody"></tbody>

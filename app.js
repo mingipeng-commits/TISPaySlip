@@ -122,6 +122,31 @@ function getVal(id) { return parseInt(document.getElementById(id).value) || 0; }
 function getStr(id) { return document.getElementById(id).value.trim(); }
 function fmt(n) { return '$' + n.toLocaleString(); }
 
+function fmtDateTime(iso) {
+    if (!iso) return '-';
+    const d = new Date(iso);
+    return d.getFullYear() + '/' +
+        String(d.getMonth() + 1).padStart(2, '0') + '/' +
+        String(d.getDate()).padStart(2, '0') + ' ' +
+        String(d.getHours()).padStart(2, '0') + ':' +
+        String(d.getMinutes()).padStart(2, '0');
+}
+
+// ============================================================
+// Header Clock
+// ============================================================
+function updateClock() {
+    const el = document.getElementById('headerClock');
+    if (!el) return;
+    const now = new Date();
+    el.textContent = now.getFullYear() + '/' +
+        String(now.getMonth() + 1).padStart(2, '0') + '/' +
+        String(now.getDate()).padStart(2, '0') + ' ' +
+        String(now.getHours()).padStart(2, '0') + ':' +
+        String(now.getMinutes()).padStart(2, '0') + ':' +
+        String(now.getSeconds()).padStart(2, '0');
+}
+
 function populateSelect(selectId, min, max, preselect) {
     const select = document.getElementById(selectId);
     const tiers = getTiers(min, max);
@@ -326,11 +351,7 @@ function saveEntry() {
     saveEntries(entries);
     editingId = null;
     document.getElementById('editingBanner').style.display = 'none';
-    alert('薪資條已儲存！');
-    // Ask if user wants to print
-    if (confirm('是否要列印此筆薪資條？')) {
-        printEntryPayslip(data);
-    }
+    alert('薪資條已儲存！（' + fmtDateTime(data.updatedAt) + '）');
 }
 
 // ============================================================
@@ -361,7 +382,7 @@ function renderSavedEntries() {
     const filtered = filterMonth ? entries.filter(e => e.payPeriod === filterMonth) : entries;
 
     if (filtered.length === 0) {
-        container.innerHTML = '<tr><td colspan="7" class="empty-state"><div class="empty-icon">&#128196;</div><p>尚無儲存的薪資條記錄</p></td></tr>';
+        container.innerHTML = '<tr><td colspan="8" class="empty-state"><div class="empty-icon">&#128196;</div><p>尚無儲存的薪資條記錄</p></td></tr>';
         return;
     }
 
@@ -377,6 +398,7 @@ function renderSavedEntries() {
             '<td class="amount">' + fmt(b.grossEarnings) + '</td>' +
             '<td class="amount">' + fmt(b.totalDeductions) + '</td>' +
             '<td class="amount" style="font-weight:700;color:var(--success)">' + fmt(b.netPay) + '</td>' +
+            '<td class="timestamp-cell">' + fmtDateTime(e.updatedAt) + '</td>' +
             '<td><div class="actions-cell">' +
                 '<button class="btn btn-sm btn-primary" onclick="editEntry(\'' + e.id + '\')">編輯</button>' +
                 '<button class="btn btn-sm btn-secondary" onclick="printSavedEntry(\'' + e.id + '\')">列印</button>' +
@@ -413,13 +435,25 @@ function printSavedEntry(id) {
 }
 
 function printEntryPayslip(entry) {
-    // Populate the print payslip and trigger print
     initSelects();
     writeFormData(entry);
     updatePayslip();
-    // Mark the entry tab as print target
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('print-target'));
     document.getElementById('tab-entry').classList.add('print-target');
+    setTimeout(() => window.print(), 100);
+}
+
+function exportPayslipPDF() {
+    // Export uses the browser's print-to-PDF via Save as PDF destination
+    const entry = readFormData();
+    if (!entry.empName) { alert('請先填寫員工資料'); return; }
+    initSelects();
+    writeFormData(entry);
+    updatePayslip();
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('print-target'));
+    document.getElementById('tab-entry').classList.add('print-target');
+    // Brief instructions then trigger print dialog (user selects "Save as PDF")
+    alert('請在列印對話框中選擇「另存為 PDF」或「Save as PDF」作為目的地。');
     setTimeout(() => window.print(), 100);
 }
 
@@ -512,6 +546,8 @@ function printEmployerSummary() {
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
     initSelects();
+    updateClock();
+    setInterval(updateClock, 1000);
 
     const now = new Date();
     const ym = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');

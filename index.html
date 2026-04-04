@@ -58,19 +58,19 @@
                 <div class="card-header"><span class="icon">&#128176;</span> 薪資項目（應發）</div>
                 <div class="card-body">
                     <div class="form-row">
-                        <div class="form-group"><label>本薪</label><input type="number" id="baseSalary" value="0" min="0"></div>
-                        <div class="form-group"><label>伙食津貼</label><input type="number" id="mealAllowance" value="0" min="0"></div>
+                        <div class="form-group"><label>本薪</label><input type="text" class="money-input" id="baseSalary" value="0" inputmode="numeric"></div>
+                        <div class="form-group"><label>伙食津貼</label><input type="text" class="money-input" id="mealAllowance" value="0" inputmode="numeric"></div>
                     </div>
                     <div class="form-row">
-                        <div class="form-group"><label>交通津貼</label><input type="number" id="transportAllowance" value="0" min="0"></div>
-                        <div class="form-group"><label>其他津貼</label><input type="number" id="otherAllowance" value="0" min="0"></div>
+                        <div class="form-group"><label>交通津貼</label><input type="text" class="money-input" id="transportAllowance" value="0" inputmode="numeric"></div>
+                        <div class="form-group"><label>其他津貼</label><input type="text" class="money-input" id="otherAllowance" value="0" inputmode="numeric"></div>
                     </div>
                     <div class="form-row">
-                        <div class="form-group"><label>加班費</label><input type="number" id="overtime" value="0" min="0"></div>
-                        <div class="form-group"><label>獎金</label><input type="number" id="bonus" value="0" min="0"></div>
+                        <div class="form-group"><label>加班費</label><input type="text" class="money-input" id="overtime" value="0" inputmode="numeric"></div>
+                        <div class="form-group"><label>獎金</label><input type="text" class="money-input" id="bonus" value="0" inputmode="numeric"></div>
                     </div>
                     <div class="form-row single">
-                        <div class="form-group"><label>請假扣款（負數）</label><input type="number" id="leaveDeduction" value="0" max="0"></div>
+                        <div class="form-group"><label>請假扣款（負數）</label><input type="text" class="money-input money-input-negative" id="leaveDeduction" value="0" inputmode="numeric"></div>
                     </div>
                 </div>
             </div>
@@ -103,7 +103,7 @@
                                 <option value="2">2 人</option><option value="3">3 人</option>
                             </select>
                         </div>
-                        <div class="form-group"><label>所得稅預扣</label><input type="number" id="incomeTax" value="0" min="0"></div>
+                        <div class="form-group"><label>所得稅預扣</label><input type="text" class="money-input" id="incomeTax" value="0" inputmode="numeric"></div>
                     </div>
                     <div class="tier-info" id="tierInfo">輸入本薪後，系統將自動建議適用的投保級距。</div>
                 </div>
@@ -115,11 +115,11 @@
                 <div class="card-body">
                     <div class="form-row">
                         <div class="form-group"><label>其他扣款項目名稱</label><input type="text" id="otherDeductionName" placeholder="例：借支扣回"></div>
-                        <div class="form-group"><label>其他扣款金額</label><input type="number" id="otherDeduction" value="0" min="0"></div>
+                        <div class="form-group"><label>其他扣款金額</label><input type="text" class="money-input" id="otherDeduction" value="0" inputmode="numeric"></div>
                     </div>
                     <div class="form-row">
                         <div class="form-group"><label>其他加項名稱</label><input type="text" id="otherEarningName" placeholder="例：出差津貼"></div>
-                        <div class="form-group"><label>其他加項金額</label><input type="number" id="otherEarning" value="0" min="0"></div>
+                        <div class="form-group"><label>其他加項金額</label><input type="text" class="money-input" id="otherEarning" value="0" inputmode="numeric"></div>
                     </div>
                 </div>
             </div>

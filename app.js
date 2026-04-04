@@ -118,9 +118,59 @@ function generateId() {
 // ============================================================
 // UI Helpers
 // ============================================================
-function getVal(id) { return parseInt(document.getElementById(id).value) || 0; }
+function parseMoneyValue(str) {
+    // Strip commas and whitespace, parse as integer
+    return parseInt(String(str).replace(/,/g, '').trim()) || 0;
+}
+function formatWithCommas(n) {
+    return n.toLocaleString('en-US');
+}
+function getVal(id) { return parseMoneyValue(document.getElementById(id).value); }
 function getStr(id) { return document.getElementById(id).value.trim(); }
 function fmt(n) { return '$' + n.toLocaleString(); }
+
+// ============================================================
+// Money Input Formatting
+// ============================================================
+function initMoneyInputs() {
+    document.querySelectorAll('.money-input').forEach(input => {
+        // On focus: select all text so user can just type to replace
+        input.addEventListener('focus', function() {
+            const raw = parseMoneyValue(this.value);
+            if (raw === 0) {
+                this.value = '';
+            } else {
+                // Show raw number for editing
+                this.value = raw.toString();
+            }
+            this.select();
+        });
+
+        // On blur: format with commas
+        input.addEventListener('blur', function() {
+            const isNeg = this.classList.contains('money-input-negative');
+            let raw = parseMoneyValue(this.value);
+            if (isNeg && raw > 0) raw = -raw; // force negative for leave deduction
+            if (raw === 0) {
+                this.value = '0';
+            } else {
+                this.value = formatWithCommas(raw);
+            }
+        });
+
+        // On input: strip non-numeric chars (allow minus for negative fields)
+        input.addEventListener('input', function() {
+            const isNeg = this.classList.contains('money-input-negative');
+            const cursorPos = this.selectionStart;
+            const before = this.value;
+            if (isNeg) {
+                this.value = this.value.replace(/[^0-9\-]/g, '');
+            } else {
+                this.value = this.value.replace(/[^0-9]/g, '');
+            }
+        });
+    });
+}
 
 function fmtDateTime(iso) {
     if (!iso) return '-';
@@ -291,6 +341,11 @@ function readFormData() {
     };
 }
 
+function setMoneyField(id, val) {
+    const v = val || 0;
+    document.getElementById(id).value = v === 0 ? '0' : formatWithCommas(v);
+}
+
 function writeFormData(e) {
     document.getElementById('empName').value = e.empName || '';
     document.getElementById('empId').value = e.empId || '';
@@ -298,22 +353,22 @@ function writeFormData(e) {
     document.getElementById('empTitle').value = e.empTitle || '';
     document.getElementById('payPeriod').value = e.payPeriod || '';
     document.getElementById('payDate').value = e.payDate || '';
-    document.getElementById('baseSalary').value = e.baseSalary || 0;
-    document.getElementById('mealAllowance').value = e.mealAllowance || 0;
-    document.getElementById('transportAllowance').value = e.transportAllowance || 0;
-    document.getElementById('otherAllowance').value = e.otherAllowance || 0;
-    document.getElementById('overtime').value = e.overtime || 0;
-    document.getElementById('bonus').value = e.bonus || 0;
-    document.getElementById('leaveDeduction').value = e.leaveDeduction || 0;
-    document.getElementById('otherEarning').value = e.otherEarning || 0;
+    setMoneyField('baseSalary', e.baseSalary);
+    setMoneyField('mealAllowance', e.mealAllowance);
+    setMoneyField('transportAllowance', e.transportAllowance);
+    setMoneyField('otherAllowance', e.otherAllowance);
+    setMoneyField('overtime', e.overtime);
+    setMoneyField('bonus', e.bonus);
+    setMoneyField('leaveDeduction', e.leaveDeduction);
+    setMoneyField('otherEarning', e.otherEarning);
     document.getElementById('otherEarningName').value = e.otherEarningName || '';
     document.getElementById('laborTier').value = e.laborTier || LABOR_MIN;
     document.getElementById('healthTier').value = e.healthTier || HEALTH_MIN;
     document.getElementById('pensionTier').value = e.pensionTier || PENSION_MIN;
     document.getElementById('voluntaryPensionRate').value = e.voluntaryPensionRate || 0;
     document.getElementById('dependents').value = e.dependents || 0;
-    document.getElementById('incomeTax').value = e.incomeTax || 0;
-    document.getElementById('otherDeduction').value = e.otherDeduction || 0;
+    setMoneyField('incomeTax', e.incomeTax);
+    setMoneyField('otherDeduction', e.otherDeduction);
     document.getElementById('otherDeductionName').value = e.otherDeductionName || '';
     suggestTiers();
     updatePayslip();
@@ -360,8 +415,8 @@ function saveEntry() {
 function resetForm() {
     editingId = null;
     document.getElementById('editingBanner').style.display = 'none';
-    document.querySelectorAll('#tab-entry input[type="number"]').forEach(el => el.value = 0);
-    document.querySelectorAll('#tab-entry input[type="text"]').forEach(el => el.value = '');
+    document.querySelectorAll('#tab-entry .money-input').forEach(el => el.value = '0');
+    document.querySelectorAll('#tab-entry input[type="text"]:not(.money-input)').forEach(el => el.value = '');
     document.getElementById('voluntaryPensionRate').value = 0;
     document.getElementById('dependents').value = 0;
     initSelects();
@@ -546,6 +601,7 @@ function printEmployerSummary() {
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
     initSelects();
+    initMoneyInputs();
     updateClock();
     setInterval(updateClock, 1000);
 

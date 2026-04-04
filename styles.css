@@ -122,6 +122,7 @@ body {
     box-shadow: 0 0 0 3px rgba(52,152,219,0.1);
 }
 .form-group input[type="number"] { text-align: right; }
+.form-group .money-input { text-align: right; font-variant-numeric: tabular-nums; }
 
 .tier-info {
     background: #f0f7ff;

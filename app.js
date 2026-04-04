@@ -58,7 +58,9 @@ function calcWageFund(tier) {
     return Math.ceil(tier * WAGE_FUND_RATE);
 }
 function calcHealthEmployee(tier, dependents) {
-    return Math.round(tier * HEALTH_RATE * 0.3 * (1 + dependents));
+    // 先算單人整數金額，再乘以人數 (本人 + 眷屬)
+    const perPerson = Math.round(tier * HEALTH_RATE * 0.3);
+    return perPerson * (1 + dependents);
 }
 function calcHealthEmployer(tier) {
     return Math.round(tier * HEALTH_RATE * 0.6 * (1 + AVG_DEPENDENTS));

@@ -252,7 +252,8 @@ function suggestTiers() {
 
     const laborTier = findTier(baseSalary, LABOR_MIN, LABOR_MAX);
     const healthTier = findTier(regularPay, HEALTH_MIN, HEALTH_MAX);
-    const pensionTier = findTier(baseSalary, PENSION_MIN, PENSION_MAX);
+    const pensionWage = baseSalary + mealAllowance;
+    const pensionTier = findTier(pensionWage, PENSION_MIN, PENSION_MAX);
 
     document.getElementById('laborTier').value = laborTier;
     document.getElementById('healthTier').value = healthTier;
@@ -262,7 +263,7 @@ function suggestTiers() {
         `經常性給付 <span>${regularPay.toLocaleString()}</span> 元（本薪＋伙食＋其他津貼）<br>` +
         `勞保 <span>${laborTier.toLocaleString()}</span>（依本薪）、` +
         `健保 <span>${healthTier.toLocaleString()}</span>（依經常性給付）、` +
-        `勞退 <span>${pensionTier.toLocaleString()}</span>（依本薪）`;
+        `勞退 <span>${pensionTier.toLocaleString()}</span>（依本薪＋伙食 ${pensionWage.toLocaleString()} 元）`;
 }
 
 // ============================================================

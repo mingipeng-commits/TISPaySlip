@@ -3,6 +3,9 @@
   "version": "2.0.0",
   "description": "TIS Payslip Generator - 泰然策略解密股份有限公司薪資條產生器",
   "main": "server.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "start": "node server.js"
   },

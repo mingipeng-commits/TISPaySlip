@@ -134,6 +134,6 @@ app.delete('/api/employees/:id', (req, res) => {
 // ============================================================
 // Start Server
 // ============================================================
-app.listen(PORT, () => {
-    console.log(`TIS Payslip Generator running at http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`TIS Payslip Generator running on port ${PORT}`);
 });

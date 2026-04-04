@@ -4,460 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TIS 薪資條產生器</title>
-    <style>
-        :root {
-            --primary: #2c3e50;
-            --accent: #3498db;
-            --bg: #f5f7fa;
-            --card: #ffffff;
-            --border: #dce1e8;
-            --text: #2c3e50;
-            --text-light: #7f8c8d;
-            --success: #27ae60;
-            --danger: #e74c3c;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", "微軟正黑體", sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            line-height: 1.6;
-        }
-
-        .app-header {
-            background: var(--primary);
-            color: white;
-            padding: 16px 24px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-        }
-
-        .app-header h1 {
-            font-size: 20px;
-            font-weight: 600;
-        }
-
-        .app-header .subtitle {
-            font-size: 13px;
-            opacity: 0.8;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 24px;
-            display: grid;
-            grid-template-columns: 420px 1fr;
-            gap: 24px;
-            align-items: start;
-        }
-
-        @media (max-width: 900px) {
-            .container {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* Form Panel */
-        .form-panel {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .card {
-            background: var(--card);
-            border-radius: 10px;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-            border: 1px solid var(--border);
-            overflow: hidden;
-        }
-
-        .card-header {
-            background: #f8f9fb;
-            padding: 12px 16px;
-            font-weight: 600;
-            font-size: 14px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .card-header .icon {
-            font-size: 16px;
-        }
-
-        .card-body {
-            padding: 16px;
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 12px;
-        }
-
-        .form-row.single {
-            grid-template-columns: 1fr;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .form-group label {
-            font-size: 12px;
-            font-weight: 500;
-            color: var(--text-light);
-        }
-
-        .form-group input,
-        .form-group select {
-            padding: 8px 10px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            font-size: 14px;
-            font-family: inherit;
-            transition: border-color 0.2s;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(52,152,219,0.1);
-        }
-
-        .form-group input[type="number"] {
-            text-align: right;
-        }
-
-        .tier-info {
-            background: #f0f7ff;
-            border: 1px solid #c8dff7;
-            border-radius: 6px;
-            padding: 10px 12px;
-            font-size: 12px;
-            color: #2471a3;
-            margin-top: 4px;
-        }
-
-        .tier-info span {
-            font-weight: 600;
-        }
-
-        /* Payslip Preview */
-        .payslip-panel {
-            position: sticky;
-            top: 24px;
-        }
-
-        .payslip {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            border: 1px solid var(--border);
-            overflow: hidden;
-        }
-
-        .payslip-header {
-            background: var(--primary);
-            color: white;
-            padding: 20px 24px;
-            text-align: center;
-        }
-
-        .payslip-header .company-name {
-            font-size: 22px;
-            font-weight: 700;
-            letter-spacing: 2px;
-        }
-
-        .payslip-header .payslip-title {
-            font-size: 16px;
-            margin-top: 4px;
-            opacity: 0.9;
-        }
-
-        .payslip-meta {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            padding: 12px 24px;
-            background: #f8f9fb;
-            border-bottom: 1px solid var(--border);
-            font-size: 13px;
-            gap: 4px;
-        }
-
-        .payslip-meta .meta-item {
-            display: flex;
-            gap: 8px;
-        }
-
-        .payslip-meta .meta-label {
-            color: var(--text-light);
-            min-width: 56px;
-        }
-
-        .payslip-meta .meta-value {
-            font-weight: 600;
-        }
-
-        .payslip-body {
-            padding: 16px 24px;
-        }
-
-        .payslip-section {
-            margin-bottom: 16px;
-        }
-
-        .payslip-section-title {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-light);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            padding-bottom: 6px;
-            border-bottom: 2px solid var(--border);
-            margin-bottom: 8px;
-        }
-
-        .payslip-section-title.earnings {
-            border-bottom-color: var(--success);
-            color: var(--success);
-        }
-
-        .payslip-section-title.deductions {
-            border-bottom-color: var(--danger);
-            color: var(--danger);
-        }
-
-        .payslip-line {
-            display: flex;
-            justify-content: space-between;
-            padding: 4px 0;
-            font-size: 14px;
-        }
-
-        .payslip-line .line-label {
-            color: #555;
-        }
-
-        .payslip-line .line-value {
-            font-variant-numeric: tabular-nums;
-            font-weight: 500;
-        }
-
-        .payslip-line.sub-item .line-label {
-            padding-left: 16px;
-            font-size: 13px;
-            color: var(--text-light);
-        }
-
-        .payslip-line.sub-item .line-value {
-            font-size: 13px;
-            color: var(--text-light);
-        }
-
-        .payslip-subtotal {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            font-size: 15px;
-            font-weight: 600;
-            border-top: 1px solid var(--border);
-            margin-top: 4px;
-        }
-
-        .payslip-subtotal.earnings-total .total-value {
-            color: var(--success);
-        }
-
-        .payslip-subtotal.deductions-total .total-value {
-            color: var(--danger);
-        }
-
-        .payslip-net {
-            background: var(--primary);
-            color: white;
-            display: flex;
-            justify-content: space-between;
-            padding: 16px 24px;
-            font-size: 18px;
-            font-weight: 700;
-        }
-
-        .payslip-employer {
-            padding: 12px 24px;
-            background: #fef9e7;
-            border-top: 1px solid #f9e79f;
-        }
-
-        .payslip-employer .employer-title {
-            font-size: 12px;
-            font-weight: 600;
-            color: #b7950b;
-            margin-bottom: 6px;
-        }
-
-        .payslip-employer .payslip-line {
-            font-size: 13px;
-        }
-
-        .payslip-employer .payslip-line .line-label {
-            color: #7d6608;
-        }
-
-        .payslip-employer .employer-total {
-            display: flex;
-            justify-content: space-between;
-            padding-top: 6px;
-            border-top: 1px solid #f0d858;
-            margin-top: 4px;
-            font-weight: 600;
-            font-size: 14px;
-            color: #7d6608;
-        }
-
-        .actions-bar {
-            display: flex;
-            gap: 10px;
-            margin-top: 16px;
-        }
-
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            font-family: inherit;
-            transition: all 0.2s;
-            flex: 1;
-        }
-
-        .btn-primary {
-            background: var(--accent);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #2980b9;
-        }
-
-        .btn-secondary {
-            background: #ecf0f1;
-            color: var(--text);
-        }
-
-        .btn-secondary:hover {
-            background: #dce1e8;
-        }
-
-        /* Employee list management */
-        .employee-list-section {
-            margin-bottom: 12px;
-        }
-
-        .employee-chips {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin-top: 8px;
-        }
-
-        .employee-chip {
-            padding: 4px 12px;
-            background: #eaf2f8;
-            border: 1px solid #aed6f1;
-            border-radius: 16px;
-            font-size: 13px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .employee-chip:hover {
-            background: #d4e6f1;
-        }
-
-        .employee-chip.active {
-            background: var(--accent);
-            color: white;
-            border-color: var(--accent);
-        }
-
-        .employee-chip .remove-btn {
-            margin-left: 4px;
-            opacity: 0.6;
-            font-size: 11px;
-        }
-
-        .employee-chip .remove-btn:hover {
-            opacity: 1;
-        }
-
-        /* Print Styles */
-        @media print {
-            body {
-                background: white;
-            }
-
-            .app-header,
-            .form-panel,
-            .actions-bar,
-            .no-print {
-                display: none !important;
-            }
-
-            .container {
-                display: block;
-                padding: 0;
-                max-width: 100%;
-            }
-
-            .payslip-panel {
-                position: static;
-            }
-
-            .payslip {
-                box-shadow: none;
-                border: 2px solid #333;
-                border-radius: 0;
-            }
-
-            .payslip-header {
-                background: white !important;
-                color: black !important;
-                border-bottom: 2px solid #333;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-
-            .payslip-net {
-                background: #eee !important;
-                color: black !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-        }
-
-        .hidden-on-zero {
-            display: none;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
@@ -468,529 +15,261 @@
     </div>
 </div>
 
-<div class="container">
-    <!-- Left: Input Form -->
-    <div class="form-panel">
-        <!-- Employee Info -->
-        <div class="card">
-            <div class="card-header">
-                <span class="icon">&#128100;</span> 員工資料
+<div class="tab-bar no-print">
+    <button class="tab-btn active" data-tab="entry" onclick="switchTab('entry')">&#128221; 薪資輸入</button>
+    <button class="tab-btn" data-tab="saved" onclick="switchTab('saved')">&#128196; 已儲存記錄</button>
+    <button class="tab-btn" data-tab="employer" onclick="switchTab('employer')">&#127970; 雇主總覽</button>
+</div>
+
+<!-- ==================== TAB 1: Entry Form ==================== -->
+<div class="tab-content active" id="tab-entry">
+    <div class="container">
+        <div class="form-panel">
+            <!-- Editing Banner -->
+            <div id="editingBanner" class="card" style="display:none; border-color: var(--warning);">
+                <div class="card-body" style="background:#fef9e7; display:flex; justify-content:space-between; align-items:center;">
+                    <span id="editingBannerText" style="font-weight:600; color:#7d6608;"></span>
+                    <button class="btn btn-sm btn-secondary" onclick="resetForm()">取消編輯</button>
+                </div>
             </div>
-            <div class="card-body">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>員工姓名</label>
-                        <input type="text" id="empName" placeholder="王小明">
+
+            <!-- Employee Info -->
+            <div class="card">
+                <div class="card-header"><span class="icon">&#128100;</span> 員工資料</div>
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="form-group"><label>員工姓名</label><input type="text" id="empName" placeholder="王小明"></div>
+                        <div class="form-group"><label>員工編號</label><input type="text" id="empId" placeholder="TIS-001"></div>
                     </div>
-                    <div class="form-group">
-                        <label>員工編號</label>
-                        <input type="text" id="empId" placeholder="TIS-001">
+                    <div class="form-row">
+                        <div class="form-group"><label>部門</label><input type="text" id="empDept" placeholder="研發部"></div>
+                        <div class="form-group"><label>職稱</label><input type="text" id="empTitle" placeholder="軟體工程師"></div>
                     </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>部門</label>
-                        <input type="text" id="empDept" placeholder="研發部">
-                    </div>
-                    <div class="form-group">
-                        <label>職稱</label>
-                        <input type="text" id="empTitle" placeholder="軟體工程師">
+                    <div class="form-row">
+                        <div class="form-group"><label>薪資年月</label><input type="month" id="payPeriod"></div>
+                        <div class="form-group"><label>發薪日期</label><input type="date" id="payDate"></div>
                     </div>
                 </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>薪資年月</label>
-                        <input type="month" id="payPeriod">
+            </div>
+
+            <!-- Earnings -->
+            <div class="card">
+                <div class="card-header"><span class="icon">&#128176;</span> 薪資項目（應發）</div>
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="form-group"><label>本薪</label><input type="number" id="baseSalary" value="0" min="0"></div>
+                        <div class="form-group"><label>伙食津貼</label><input type="number" id="mealAllowance" value="0" min="0"></div>
                     </div>
-                    <div class="form-group">
-                        <label>發薪日期</label>
-                        <input type="date" id="payDate">
+                    <div class="form-row">
+                        <div class="form-group"><label>交通津貼</label><input type="number" id="transportAllowance" value="0" min="0"></div>
+                        <div class="form-group"><label>其他津貼</label><input type="number" id="otherAllowance" value="0" min="0"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>加班費</label><input type="number" id="overtime" value="0" min="0"></div>
+                        <div class="form-group"><label>獎金</label><input type="number" id="bonus" value="0" min="0"></div>
+                    </div>
+                    <div class="form-row single">
+                        <div class="form-group"><label>請假扣款（負數）</label><input type="number" id="leaveDeduction" value="0" max="0"></div>
                     </div>
                 </div>
+            </div>
+
+            <!-- Insurance -->
+            <div class="card">
+                <div class="card-header"><span class="icon">&#128203;</span> 勞健保及勞退設定</div>
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="form-group"><label>勞保投保薪資級距</label><select id="laborTier"></select></div>
+                        <div class="form-group"><label>健保投保金額級距</label><select id="healthTier"></select></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>勞退提繳工資級距</label><select id="pensionTier"></select></div>
+                        <div class="form-group">
+                            <label>勞退自提比例</label>
+                            <select id="voluntaryPensionRate">
+                                <option value="0">0%（不自提）</option>
+                                <option value="1">1%</option><option value="2">2%</option>
+                                <option value="3">3%</option><option value="4">4%</option>
+                                <option value="5">5%</option><option value="6">6%</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>健保眷屬人數（最多 3 人）</label>
+                            <select id="dependents">
+                                <option value="0">0 人</option><option value="1">1 人</option>
+                                <option value="2">2 人</option><option value="3">3 人</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label>所得稅預扣</label><input type="number" id="incomeTax" value="0" min="0"></div>
+                    </div>
+                    <div class="tier-info" id="tierInfo">輸入本薪後，系統將自動建議適用的投保級距。</div>
+                </div>
+            </div>
+
+            <!-- Other -->
+            <div class="card">
+                <div class="card-header"><span class="icon">&#128221;</span> 其他扣款 / 加項</div>
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="form-group"><label>其他扣款項目名稱</label><input type="text" id="otherDeductionName" placeholder="例：借支扣回"></div>
+                        <div class="form-group"><label>其他扣款金額</label><input type="number" id="otherDeduction" value="0" min="0"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>其他加項名稱</label><input type="text" id="otherEarningName" placeholder="例：出差津貼"></div>
+                        <div class="form-group"><label>其他加項金額</label><input type="number" id="otherEarning" value="0" min="0"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Save/Reset Buttons -->
+            <div class="actions-bar no-print">
+                <button class="btn btn-success btn-flex" onclick="saveEntry()">&#128190; 確認儲存</button>
+                <button class="btn btn-secondary btn-flex" onclick="resetForm()">&#128260; 重置</button>
             </div>
         </div>
 
-        <!-- Earnings -->
-        <div class="card">
-            <div class="card-header">
-                <span class="icon">&#128176;</span> 薪資項目（應發）
-            </div>
-            <div class="card-body">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>本薪</label>
-                        <input type="number" id="baseSalary" value="0" min="0" step="1">
+        <!-- Payslip Preview -->
+        <div class="payslip-panel">
+            <div class="payslip" id="payslipPreview">
+                <div class="payslip-header">
+                    <div class="company-name">TIS</div>
+                    <div class="payslip-title">薪 資 條</div>
+                </div>
+                <div class="payslip-meta">
+                    <div class="meta-item"><span class="meta-label">姓名：</span><span class="meta-value" id="pEmpName">-</span></div>
+                    <div class="meta-item"><span class="meta-label">編號：</span><span class="meta-value" id="pEmpId">-</span></div>
+                    <div class="meta-item"><span class="meta-label">部門：</span><span class="meta-value" id="pDept">-</span></div>
+                    <div class="meta-item"><span class="meta-label">職稱：</span><span class="meta-value" id="pTitle">-</span></div>
+                    <div class="meta-item"><span class="meta-label">薪資月：</span><span class="meta-value" id="pPeriod">-</span></div>
+                    <div class="meta-item"><span class="meta-label">發薪日：</span><span class="meta-value" id="pPayDate">-</span></div>
+                </div>
+                <div class="payslip-body">
+                    <div class="payslip-section">
+                        <div class="payslip-section-title earnings">應發項目</div>
+                        <div id="earningsLines"></div>
+                        <div class="payslip-subtotal earnings-total">
+                            <span>應發合計</span><span class="total-value" id="pGrossTotal">$0</span>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>伙食津貼</label>
-                        <input type="number" id="mealAllowance" value="0" min="0" step="1">
+                    <div class="payslip-section">
+                        <div class="payslip-section-title deductions">應扣項目</div>
+                        <div id="deductionsLines"></div>
+                        <div class="payslip-subtotal deductions-total">
+                            <span>應扣合計</span><span class="total-value" id="pDeductionsTotal">$0</span>
+                        </div>
                     </div>
                 </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>交通津貼</label>
-                        <input type="number" id="transportAllowance" value="0" min="0" step="1">
-                    </div>
-                    <div class="form-group">
-                        <label>其他津貼</label>
-                        <input type="number" id="otherAllowance" value="0" min="0" step="1">
-                    </div>
+                <div class="payslip-net">
+                    <span>實發金額（Actual Payout）</span><span id="pNetPay">$0</span>
                 </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>加班費</label>
-                        <input type="number" id="overtime" value="0" min="0" step="1">
-                    </div>
-                    <div class="form-group">
-                        <label>獎金</label>
-                        <input type="number" id="bonus" value="0" min="0" step="1">
-                    </div>
-                </div>
-                <div class="form-row single">
-                    <div class="form-group">
-                        <label>請假扣款（負數）</label>
-                        <input type="number" id="leaveDeduction" value="0" max="0" step="1">
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Insurance Settings -->
-        <div class="card">
-            <div class="card-header">
-                <span class="icon">&#128203;</span> 勞健保及勞退設定
-            </div>
-            <div class="card-body">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>勞保投保薪資級距</label>
-                        <select id="laborTier">
-                            <!-- Populated by JS -->
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>健保投保金額級距</label>
-                        <select id="healthTier">
-                            <!-- Populated by JS -->
-                        </select>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>勞退提繳工資級距</label>
-                        <select id="pensionTier">
-                            <!-- Populated by JS -->
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>勞退自提比例</label>
-                        <select id="voluntaryPensionRate">
-                            <option value="0">0%（不自提）</option>
-                            <option value="1">1%</option>
-                            <option value="2">2%</option>
-                            <option value="3">3%</option>
-                            <option value="4">4%</option>
-                            <option value="5">5%</option>
-                            <option value="6">6%</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>健保眷屬人數（最多 3 人）</label>
-                        <select id="dependents">
-                            <option value="0">0 人</option>
-                            <option value="1">1 人</option>
-                            <option value="2">2 人</option>
-                            <option value="3">3 人</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>所得稅預扣</label>
-                        <input type="number" id="incomeTax" value="0" min="0" step="1">
-                    </div>
-                </div>
-                <div class="tier-info" id="tierInfo">
-                    輸入本薪後，系統將自動建議適用的投保級距。
-                </div>
-            </div>
-        </div>
-
-        <!-- Other Deductions -->
-        <div class="card">
-            <div class="card-header">
-                <span class="icon">&#128221;</span> 其他扣款 / 加項
-            </div>
-            <div class="card-body">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>其他扣款項目名稱</label>
-                        <input type="text" id="otherDeductionName" placeholder="例：借支扣回">
-                    </div>
-                    <div class="form-group">
-                        <label>其他扣款金額</label>
-                        <input type="number" id="otherDeduction" value="0" min="0" step="1">
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>其他加項名稱</label>
-                        <input type="text" id="otherEarningName" placeholder="例：出差津貼">
-                    </div>
-                    <div class="form-group">
-                        <label>其他加項金額</label>
-                        <input type="number" id="otherEarning" value="0" min="0" step="1">
+                <div class="payslip-employer no-print">
+                    <div class="employer-title">&#9432; 雇主額外負擔（不列入薪資條，僅供參考）</div>
+                    <div id="employerLines"></div>
+                    <div class="employer-total">
+                        <span>雇主負擔合計</span><span id="pEmployerTotal">$0</span>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Right: Payslip Preview -->
-    <div class="payslip-panel">
-        <div class="payslip" id="payslipPreview">
-            <div class="payslip-header">
-                <div class="company-name">TIS</div>
-                <div class="payslip-title">薪 資 條</div>
+            <div class="actions-bar no-print">
+                <button class="btn btn-primary btn-flex" onclick="printEntryPayslip(readFormData())">&#128424; 列印薪資條</button>
             </div>
-            <div class="payslip-meta" id="payslipMeta">
-                <div class="meta-item"><span class="meta-label">姓名：</span><span class="meta-value" id="pEmpName">-</span></div>
-                <div class="meta-item"><span class="meta-label">編號：</span><span class="meta-value" id="pEmpId">-</span></div>
-                <div class="meta-item"><span class="meta-label">部門：</span><span class="meta-value" id="pDept">-</span></div>
-                <div class="meta-item"><span class="meta-label">職稱：</span><span class="meta-value" id="pTitle">-</span></div>
-                <div class="meta-item"><span class="meta-label">薪資月：</span><span class="meta-value" id="pPeriod">-</span></div>
-                <div class="meta-item"><span class="meta-label">發薪日：</span><span class="meta-value" id="pPayDate">-</span></div>
-            </div>
-            <div class="payslip-body">
-                <!-- Earnings -->
-                <div class="payslip-section">
-                    <div class="payslip-section-title earnings">應發項目</div>
-                    <div id="earningsLines"></div>
-                    <div class="payslip-subtotal earnings-total">
-                        <span>應發合計</span>
-                        <span class="total-value" id="pGrossTotal">$0</span>
-                    </div>
-                </div>
-                <!-- Deductions -->
-                <div class="payslip-section">
-                    <div class="payslip-section-title deductions">應扣項目</div>
-                    <div id="deductionsLines"></div>
-                    <div class="payslip-subtotal deductions-total">
-                        <span>應扣合計</span>
-                        <span class="total-value" id="pDeductionsTotal">$0</span>
-                    </div>
-                </div>
-            </div>
-            <div class="payslip-net">
-                <span>實發金額</span>
-                <span id="pNetPay">$0</span>
-            </div>
-            <div class="payslip-employer">
-                <div class="employer-title">&#9432; 雇主額外負擔（不列入薪資條，僅供參考）</div>
-                <div id="employerLines"></div>
-                <div class="employer-total">
-                    <span>雇主負擔合計</span>
-                    <span id="pEmployerTotal">$0</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="actions-bar no-print">
-            <button class="btn btn-primary" onclick="window.print()">&#128424; 列印薪資條</button>
-            <button class="btn btn-secondary" onclick="resetForm()">&#128260; 重置</button>
         </div>
     </div>
 </div>
 
-<script>
-// ============================================================
-// 2026 Insurance Tier Data (民國 115 年 1 月 1 日起)
-// ============================================================
+<!-- ==================== TAB 2: Saved Entries ==================== -->
+<div class="tab-content" id="tab-saved">
+    <div class="full-width">
+        <div class="card">
+            <div class="card-header">
+                <span class="icon">&#128196;</span> 已儲存薪資條
+            </div>
+            <div class="card-body">
+                <div class="entries-toolbar">
+                    <div class="form-group" style="flex-direction:row; align-items:center; gap:8px;">
+                        <label style="white-space:nowrap; margin:0;">篩選月份：</label>
+                        <input type="month" id="filterMonth" onchange="renderSavedEntries()">
+                        <button class="btn btn-sm btn-secondary" onclick="document.getElementById('filterMonth').value=''; renderSavedEntries();">顯示全部</button>
+                    </div>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table class="entries-table">
+                        <thead>
+                            <tr>
+                                <th>薪資月</th><th>姓名</th><th>編號</th>
+                                <th class="amount">應發合計</th><th class="amount">應扣合計</th>
+                                <th class="amount">實發金額</th><th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="savedEntriesBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-// All tier brackets (unified list from the 3-in-1 table)
-const ALL_TIERS = [
-    1500, 3000, 4500, 6000, 7500, 8700, 9900, 11100,
-    12540, 13500, 15840, 16500, 17280, 17880, 19047,
-    20008, 21009, 22000, 23100, 24000, 25250, 26400,
-    27600, 28590, 29500, 30300, 31800, 33300, 34800,
-    36300, 38200, 40100, 42000, 43900, 45800,
-    48200, 50600, 53000, 55400, 57800, 60800, 63800,
-    66800, 69800, 72800, 76500, 80200, 83900, 87600,
-    92100, 96600, 101100, 105600, 110100, 115500, 120900,
-    126300, 131700, 137100, 142500, 147900, 150000,
-    156400, 162800, 169200, 175600, 182000, 189500,
-    197000, 204500, 212000, 219500, 228200, 236900,
-    245600, 254300, 263000, 273000, 283000, 293000,
-    303000, 313000
-];
+<!-- ==================== TAB 3: Employer Summary ==================== -->
+<div class="tab-content" id="tab-employer">
+    <div class="full-width">
+        <div class="entries-toolbar no-print">
+            <div class="form-group" style="flex-direction:row; align-items:center; gap:8px;">
+                <label style="white-space:nowrap; margin:0; font-weight:600;">月份：</label>
+                <input type="month" id="summaryMonth" onchange="renderEmployerSummary()">
+            </div>
+            <button class="btn btn-sm btn-primary" onclick="printEmployerSummary()">&#128424; 列印雇主總覽</button>
+        </div>
 
-// Insurance-specific ranges
-const LABOR_MIN = 11100, LABOR_MAX = 45800;
-const HEALTH_MIN = 29500, HEALTH_MAX = 313000;
-const PENSION_MIN = 1500, PENSION_MAX = 150000;
-const OCCUPATIONAL_MIN = 29500, OCCUPATIONAL_MAX = 72800;
+        <div class="summary-cards">
+            <div class="summary-card employee-card">
+                <div class="sc-label">應發薪資合計</div>
+                <div class="sc-value" id="sumGrossAll">$0</div>
+            </div>
+            <div class="summary-card total-card">
+                <div class="sc-label">員工扣款合計</div>
+                <div class="sc-value" id="sumDeductAll">$0</div>
+            </div>
+            <div class="summary-card payout-card">
+                <div class="sc-label">實發金額合計</div>
+                <div class="sc-value" id="sumPayoutAll">$0</div>
+            </div>
+            <div class="summary-card employer-card">
+                <div class="sc-label">雇主負擔合計</div>
+                <div class="sc-value" id="sumEmployerAll">$0</div>
+            </div>
+            <div class="summary-card" style="border:2px solid var(--primary);">
+                <div class="sc-label">公司總人事成本</div>
+                <div class="sc-value" style="color:var(--primary);" id="sumTotalCost">$0</div>
+            </div>
+        </div>
 
-// Rates
-const LABOR_RATE = 0.125;          // 勞保普通+就保 12.5%
-const HEALTH_RATE = 0.0517;        // 健保 5.17%
-const OCCUPATIONAL_RATE = 0.0011;  // 職災 0.11%
-const WAGE_FUND_RATE = 0.00025;    // 工資墊償基金 0.025%
-const PENSION_EMPLOYER_RATE = 0.06; // 勞退雇主 6%
-const AVG_DEPENDENTS = 0.56;       // 平均眷口數
+        <div class="card">
+            <div class="card-header"><span class="icon">&#128200;</span> 各員工明細及雇主應繳金額</div>
+            <div class="card-body" style="padding:0; overflow-x:auto;">
+                <table class="summary-table">
+                    <thead>
+                        <tr>
+                            <th>員工</th>
+                            <th>應發合計</th>
+                            <th>勞保<br>(個人)</th>
+                            <th>健保<br>(個人)</th>
+                            <th>勞退<br>自提</th>
+                            <th>實發金額</th>
+                            <th>勞保+職災<br>+墊償(雇主)</th>
+                            <th>健保<br>(雇主)</th>
+                            <th>勞退 6%<br>(雇主)</th>
+                            <th>雇主負擔<br>合計</th>
+                        </tr>
+                    </thead>
+                    <tbody id="employerTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 
-// Get tier brackets for a specific insurance type
-function getTiers(min, max) {
-    return ALL_TIERS.filter(t => t >= min && t <= max);
-}
-
-// Find the appropriate tier for a given salary
-function findTier(salary, min, max) {
-    const tiers = getTiers(min, max);
-    if (salary <= 0) return tiers[0];
-    for (const t of tiers) {
-        if (salary <= t) return t;
-    }
-    return tiers[tiers.length - 1];
-}
-
-// ============================================================
-// Calculation Functions
-// ============================================================
-
-function calcLaborEmployee(tier) {
-    // Split into ordinary accident (11.5%) and employment insurance (1%), round each separately
-    const ordinary = Math.round(tier * 0.115 * 0.2);
-    const employment = Math.round(tier * 0.01 * 0.2);
-    return ordinary + employment;
-}
-
-function calcLaborEmployer(tier) {
-    const ordinary = Math.round(tier * 0.115 * 0.7);
-    const employment = Math.round(tier * 0.01 * 0.7);
-    return ordinary + employment;
-}
-
-function calcOccupational(tier) {
-    // 職災保險 = 職災投保薪資 × 0.11% (雇主全額)
-    // Use OCCUPATIONAL tier (min 29500, max 72800)
-    const occTier = findTier(tier, OCCUPATIONAL_MIN, OCCUPATIONAL_MAX);
-    return Math.round(occTier * OCCUPATIONAL_RATE);
-}
-
-function calcWageFund(tier) {
-    // 工資墊償基金 = 勞保投保薪資 × 0.025% (ceiling)
-    return Math.ceil(tier * WAGE_FUND_RATE);
-}
-
-function calcHealthEmployee(tier, dependents) {
-    // 健保勞工 = 投保金額 × 5.17% × 30% × (1 + 眷屬人數)
-    return Math.round(tier * HEALTH_RATE * 0.3 * (1 + dependents));
-}
-
-function calcHealthEmployer(tier) {
-    // 健保雇主 = 投保金額 × 5.17% × 60% × 1.56
-    return Math.round(tier * HEALTH_RATE * 0.6 * (1 + AVG_DEPENDENTS));
-}
-
-function calcPensionEmployer(tier) {
-    return Math.round(tier * PENSION_EMPLOYER_RATE);
-}
-
-function calcPensionVoluntary(tier, rate) {
-    return Math.round(tier * rate / 100);
-}
-
-// ============================================================
-// UI Functions
-// ============================================================
-
-function populateSelect(selectId, min, max, preselect) {
-    const select = document.getElementById(selectId);
-    const tiers = getTiers(min, max);
-    select.innerHTML = '';
-    tiers.forEach(t => {
-        const opt = document.createElement('option');
-        opt.value = t;
-        opt.textContent = t.toLocaleString() + ' 元';
-        if (t === preselect) opt.selected = true;
-        select.appendChild(opt);
-    });
-}
-
-function initSelects() {
-    populateSelect('laborTier', LABOR_MIN, LABOR_MAX, LABOR_MIN);
-    populateSelect('healthTier', HEALTH_MIN, HEALTH_MAX, HEALTH_MIN);
-    populateSelect('pensionTier', PENSION_MIN, PENSION_MAX, PENSION_MIN);
-}
-
-function getVal(id) {
-    return parseInt(document.getElementById(id).value) || 0;
-}
-
-function getStr(id) {
-    return document.getElementById(id).value.trim();
-}
-
-function fmt(n) {
-    return '$' + Math.abs(n).toLocaleString();
-}
-
-function suggestTiers() {
-    const baseSalary = getVal('baseSalary');
-    if (baseSalary <= 0) return;
-
-    const laborTier = findTier(baseSalary, LABOR_MIN, LABOR_MAX);
-    const healthTier = findTier(baseSalary, HEALTH_MIN, HEALTH_MAX);
-    const pensionTier = findTier(baseSalary, PENSION_MIN, PENSION_MAX);
-
-    document.getElementById('laborTier').value = laborTier;
-    document.getElementById('healthTier').value = healthTier;
-    document.getElementById('pensionTier').value = pensionTier;
-
-    document.getElementById('tierInfo').innerHTML =
-        `依本薪 <span>${baseSalary.toLocaleString()}</span> 元自動對應：` +
-        `勞保 <span>${laborTier.toLocaleString()}</span>、` +
-        `健保 <span>${healthTier.toLocaleString()}</span>、` +
-        `勞退 <span>${pensionTier.toLocaleString()}</span>`;
-}
-
-function addPayslipLine(container, label, value, isSubItem) {
-    if (value === 0 && isSubItem) return;
-    const div = document.createElement('div');
-    div.className = 'payslip-line' + (isSubItem ? ' sub-item' : '');
-    div.innerHTML = `<span class="line-label">${label}</span><span class="line-value">${fmt(value)}</span>`;
-    container.appendChild(div);
-}
-
-function updatePayslip() {
-    // Read inputs
-    const baseSalary = getVal('baseSalary');
-    const mealAllowance = getVal('mealAllowance');
-    const transportAllowance = getVal('transportAllowance');
-    const otherAllowance = getVal('otherAllowance');
-    const overtime = getVal('overtime');
-    const bonus = getVal('bonus');
-    const leaveDeduction = getVal('leaveDeduction'); // negative
-    const otherEarning = getVal('otherEarning');
-    const otherEarningName = getStr('otherEarningName');
-
-    const laborTier = getVal('laborTier');
-    const healthTier = getVal('healthTier');
-    const pensionTier = getVal('pensionTier');
-    const voluntaryRate = getVal('voluntaryPensionRate');
-    const dependents = getVal('dependents');
-    const incomeTax = getVal('incomeTax');
-    const otherDeduction = getVal('otherDeduction');
-    const otherDeductionName = getStr('otherDeductionName');
-
-    // Calculate earnings
-    const grossEarnings = baseSalary + mealAllowance + transportAllowance +
-        otherAllowance + overtime + bonus + leaveDeduction + otherEarning;
-
-    // Calculate employee deductions
-    const laborEmp = calcLaborEmployee(laborTier);
-    const healthEmp = calcHealthEmployee(healthTier, dependents);
-    const pensionVol = calcPensionVoluntary(pensionTier, voluntaryRate);
-
-    const totalDeductions = laborEmp + healthEmp + pensionVol + incomeTax + otherDeduction;
-    const netPay = grossEarnings - totalDeductions;
-
-    // Calculate employer costs
-    const laborEr = calcLaborEmployer(laborTier);
-    const occupational = calcOccupational(laborTier);
-    const wageFund = calcWageFund(laborTier);
-    const healthEr = calcHealthEmployer(healthTier);
-    const pensionEr = calcPensionEmployer(pensionTier);
-    const totalEmployer = laborEr + occupational + wageFund + healthEr + pensionEr;
-
-    // Update meta
-    document.getElementById('pEmpName').textContent = getStr('empName') || '-';
-    document.getElementById('pEmpId').textContent = getStr('empId') || '-';
-    document.getElementById('pDept').textContent = getStr('empDept') || '-';
-    document.getElementById('pTitle').textContent = getStr('empTitle') || '-';
-
-    const period = document.getElementById('payPeriod').value;
-    document.getElementById('pPeriod').textContent = period ? period.replace('-', ' 年 ') + ' 月' : '-';
-
-    const payDate = document.getElementById('payDate').value;
-    document.getElementById('pPayDate').textContent = payDate || '-';
-
-    // Build earnings lines
-    const earningsContainer = document.getElementById('earningsLines');
-    earningsContainer.innerHTML = '';
-    addPayslipLine(earningsContainer, '本薪', baseSalary, false);
-    if (mealAllowance) addPayslipLine(earningsContainer, '伙食津貼', mealAllowance, false);
-    if (transportAllowance) addPayslipLine(earningsContainer, '交通津貼', transportAllowance, false);
-    if (otherAllowance) addPayslipLine(earningsContainer, '其他津貼', otherAllowance, false);
-    if (overtime) addPayslipLine(earningsContainer, '加班費', overtime, false);
-    if (bonus) addPayslipLine(earningsContainer, '獎金', bonus, false);
-    if (otherEarning) addPayslipLine(earningsContainer, otherEarningName || '其他加項', otherEarning, false);
-    if (leaveDeduction) addPayslipLine(earningsContainer, '請假扣款', leaveDeduction, false);
-
-    document.getElementById('pGrossTotal').textContent = fmt(grossEarnings);
-
-    // Build deductions lines
-    const deductionsContainer = document.getElementById('deductionsLines');
-    deductionsContainer.innerHTML = '';
-    addPayslipLine(deductionsContainer, '勞保費（個人）', laborEmp, false);
-    addPayslipLine(deductionsContainer, '健保費（個人' + (dependents > 0 ? ' + 眷屬' + dependents + '人' : '') + '）', healthEmp, false);
-    if (pensionVol) addPayslipLine(deductionsContainer, '勞退自提 ' + voluntaryRate + '%', pensionVol, false);
-    if (incomeTax) addPayslipLine(deductionsContainer, '所得稅預扣', incomeTax, false);
-    if (otherDeduction) addPayslipLine(deductionsContainer, otherDeductionName || '其他扣款', otherDeduction, false);
-
-    document.getElementById('pDeductionsTotal').textContent = fmt(totalDeductions);
-    document.getElementById('pNetPay').textContent = fmt(netPay);
-
-    // Build employer lines
-    const employerContainer = document.getElementById('employerLines');
-    employerContainer.innerHTML = '';
-    addPayslipLine(employerContainer, '勞保費（雇主 70%）', laborEr, false);
-    addPayslipLine(employerContainer, '職災保險費', occupational, false);
-    addPayslipLine(employerContainer, '工資墊償基金', wageFund, false);
-    addPayslipLine(employerContainer, '健保費（雇主 60% × 1.56）', healthEr, false);
-    addPayslipLine(employerContainer, '勞退提繳 6%', pensionEr, false);
-
-    document.getElementById('pEmployerTotal').textContent = fmt(totalEmployer);
-}
-
-function resetForm() {
-    document.querySelectorAll('input[type="number"]').forEach(el => el.value = 0);
-    document.querySelectorAll('input[type="text"]').forEach(el => el.value = '');
-    document.getElementById('voluntaryPensionRate').value = 0;
-    document.getElementById('dependents').value = 0;
-    initSelects();
-    document.getElementById('tierInfo').innerHTML = '輸入本薪後，系統將自動建議適用的投保級距。';
-    updatePayslip();
-}
-
-// ============================================================
-// Initialization
-// ============================================================
-
-document.addEventListener('DOMContentLoaded', () => {
-    initSelects();
-
-    // Set default pay period to current month
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = String(now.getMonth() + 1).padStart(2, '0');
-    document.getElementById('payPeriod').value = `${y}-${m}`;
-
-    // Auto-suggest tiers when base salary changes
-    document.getElementById('baseSalary').addEventListener('input', () => {
-        suggestTiers();
-        updatePayslip();
-    });
-
-    // Update payslip on any input change
-    document.querySelectorAll('input, select').forEach(el => {
-        el.addEventListener('input', updatePayslip);
-        el.addEventListener('change', updatePayslip);
-    });
-
-    updatePayslip();
-});
-</script>
-
+<script src="app.js"></script>
 </body>
 </html>

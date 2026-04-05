@@ -1,5 +1,6 @@
 // ============================================================
-// Expense & Reimbursement Module
+// Expense & Reimbursement Module (Role-based workflow)
+// Flow: Applicant Submit → MD Approve → Finance Pay
 // ============================================================
 const APPROVAL_LABELS = { pending: '待審核', approved: '已核准', rejected: '已駁回' };
 const PAYMENT_LABELS = { unpaid: '未付款', paid: '已付款' };
@@ -18,7 +19,7 @@ function initMoneyInputs() {
     document.querySelectorAll('.money-input:not([readonly])').forEach(input => {
         input.addEventListener('focus', function() {
             const raw = parseMoneyValue(this.value);
-            if (raw === 0) { this.value = ''; } else { this.value = raw.toString(); }
+            this.value = raw === 0 ? '' : raw.toString();
             this.select();
         });
         input.addEventListener('blur', function() {
@@ -31,9 +32,6 @@ function initMoneyInputs() {
     });
 }
 
-// ============================================================
-// Tax auto-calc
-// ============================================================
 function setupTaxCalc() {
     const beforeEl = document.getElementById('expAmountBeforeTax');
     const taxEl = document.getElementById('expTax');
@@ -48,37 +46,23 @@ function setupTaxCalc() {
         if (before > 0) {
             infoEl.style.display = 'block';
             infoEl.innerHTML = '未稅 ' + fmt(before) + ' + 稅 ' + fmt(tax) + ' = 含稅 <strong>' + fmt(total) + '</strong>';
-        } else {
-            infoEl.style.display = 'none';
-        }
+        } else { infoEl.style.display = 'none'; }
     }
 
-    // Auto-fill 5% tax when before-tax changes
     beforeEl.addEventListener('blur', () => {
         const before = parseMoneyValue(beforeEl.value);
         const currentTax = parseMoneyValue(taxEl.value);
         if (before > 0 && currentTax === 0) {
-            const autoTax = Math.round(before * 0.05);
-            taxEl.value = formatWithCommas(autoTax);
+            taxEl.value = formatWithCommas(Math.round(before * 0.05));
         }
         recalc();
     });
     taxEl.addEventListener('blur', recalc);
-    // Also recalc on input
     [beforeEl, taxEl].forEach(el => el.addEventListener('input', () => {
         const before = parseMoneyValue(beforeEl.value);
         const tax = parseMoneyValue(taxEl.value);
         afterEl.value = (before + tax) === 0 ? '0' : formatWithCommas(before + tax);
     }));
-}
-
-// ============================================================
-// Approval status toggle
-// ============================================================
-function setupApprovalToggle() {
-    document.getElementById('expApprovalStatus').addEventListener('change', function() {
-        document.getElementById('rejectReasonRow').style.display = this.value === 'rejected' ? 'block' : 'none';
-    });
 }
 
 // ============================================================
@@ -119,14 +103,18 @@ function populateApplicantSelect() {
 function switchTab(tab) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === 'tab-' + tab));
+    if (tab === 'approve') renderApproveTab();
+    if (tab === 'finance') renderFinanceTab();
     if (tab === 'list') renderExpenseList();
     if (tab === 'summary') renderSummary();
 }
 
 // ============================================================
-// Form Read/Write
+// TAB 1: Applicant — Submit Expense
 // ============================================================
-function readForm() {
+let editingId = null;
+
+function readApplyForm() {
     return {
         applicant: getField('expApplicant'),
         category: getField('expCategory'),
@@ -136,18 +124,18 @@ function readForm() {
         amountBeforeTax: parseMoneyValue(document.getElementById('expAmountBeforeTax').value),
         tax: parseMoneyValue(document.getElementById('expTax').value),
         amountAfterTax: parseMoneyValue(document.getElementById('expAmountAfterTax').value),
-        approvalStatus: getField('expApprovalStatus'),
-        approvalDate: getField('expApprovalDate'),
-        rejectReason: getField('expRejectReason'),
-        expectedPayDate: getField('expExpectedPayDate'),
-        paymentStatus: getField('expPaymentStatus'),
-        actualPayDate: getField('expActualPayDate'),
-        paymentMethod: getField('expPaymentMethod'),
         notes: getField('expNotes'),
+        approvalStatus: 'pending',
+        approvalDate: '',
+        rejectReason: '',
+        paymentStatus: 'unpaid',
+        expectedPayDate: '',
+        actualPayDate: '',
+        paymentMethod: '',
     };
 }
 
-function writeForm(e) {
+function writeApplyForm(e) {
     document.getElementById('expApplicant').value = e.applicant || '';
     document.getElementById('expCategory').value = e.category || '交通費';
     document.getElementById('expDate').value = e.expDate || '';
@@ -156,22 +144,11 @@ function writeForm(e) {
     setMoneyField('expAmountBeforeTax', e.amountBeforeTax);
     setMoneyField('expTax', e.tax);
     setMoneyField('expAmountAfterTax', e.amountAfterTax);
-    document.getElementById('expApprovalStatus').value = e.approvalStatus || 'pending';
-    document.getElementById('expApprovalDate').value = e.approvalDate || '';
-    document.getElementById('expRejectReason').value = e.rejectReason || '';
-    document.getElementById('expExpectedPayDate').value = e.expectedPayDate || '';
-    document.getElementById('expPaymentStatus').value = e.paymentStatus || 'unpaid';
-    document.getElementById('expActualPayDate').value = e.actualPayDate || '';
-    document.getElementById('expPaymentMethod').value = e.paymentMethod || '';
     document.getElementById('expNotes').value = e.notes || '';
-    // Toggle reject reason row
-    document.getElementById('rejectReasonRow').style.display = e.approvalStatus === 'rejected' ? 'block' : 'none';
 }
 
-let editingId = null;
-
-async function saveExpense() {
-    const data = readForm();
+async function submitExpense() {
+    const data = readApplyForm();
     if (!data.applicant) { alert('請選擇申請人'); return; }
     if (!data.expDate) { alert('請選擇費用日期'); return; }
     if (!data.description) { alert('請填寫用途說明'); return; }
@@ -179,6 +156,17 @@ async function saveExpense() {
 
     try {
         if (editingId) {
+            // Preserve approval/payment fields from existing record
+            const existing = _expenses.find(e => e.id === editingId);
+            if (existing) {
+                data.approvalStatus = existing.approvalStatus;
+                data.approvalDate = existing.approvalDate;
+                data.rejectReason = existing.rejectReason;
+                data.paymentStatus = existing.paymentStatus;
+                data.expectedPayDate = existing.expectedPayDate;
+                data.actualPayDate = existing.actualPayDate;
+                data.paymentMethod = existing.paymentMethod;
+            }
             await fetch('/api/expenses/' + editingId, {
                 method: 'PUT', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
@@ -192,12 +180,12 @@ async function saveExpense() {
         await loadExpenses();
         editingId = null;
         document.getElementById('editBanner').style.display = 'none';
-        alert('費用報銷已儲存！');
-        resetForm();
-    } catch (err) { alert('儲存失敗：' + err.message); }
+        alert('費用申請已送出！');
+        resetApplyForm();
+    } catch (err) { alert('送出失敗：' + err.message); }
 }
 
-function resetForm() {
+function resetApplyForm() {
     editingId = null;
     document.getElementById('editBanner').style.display = 'none';
     document.getElementById('expApplicant').value = '';
@@ -205,21 +193,172 @@ function resetForm() {
     document.getElementById('expDate').value = '';
     document.getElementById('expInvoiceNo').value = '';
     document.getElementById('expDescription').value = '';
-    document.querySelectorAll('#tab-new .money-input').forEach(el => el.value = '0');
-    document.getElementById('expApprovalStatus').value = 'pending';
-    document.getElementById('expApprovalDate').value = '';
-    document.getElementById('expRejectReason').value = '';
-    document.getElementById('rejectReasonRow').style.display = 'none';
-    document.getElementById('expExpectedPayDate').value = '';
-    document.getElementById('expPaymentStatus').value = 'unpaid';
-    document.getElementById('expActualPayDate').value = '';
-    document.getElementById('expPaymentMethod').value = '';
+    document.querySelectorAll('#tab-apply .money-input').forEach(el => el.value = '0');
     document.getElementById('expNotes').value = '';
     document.getElementById('taxCalcInfo').style.display = 'none';
 }
 
+function editExpenseApply(id) {
+    const exp = _expenses.find(e => e.id === id);
+    if (!exp) return;
+    editingId = id;
+    writeApplyForm(exp);
+    document.getElementById('editBanner').style.display = 'block';
+    document.getElementById('editBannerText').textContent = '正在編輯：' + exp.applicant + '（' + exp.expDate + ' ' + exp.category + '）';
+    switchTab('apply');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 // ============================================================
-// Expense List
+// TAB 2: MD Approve
+// ============================================================
+function renderApproveTab() {
+    const pending = _expenses.filter(e => e.approvalStatus === 'pending');
+    pending.sort((a, b) => (a.expDate || '').localeCompare(b.expDate || ''));
+
+    const body = document.getElementById('approveListBody');
+    if (pending.length === 0) {
+        body.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:32px;color:#7f8c8d;">目前沒有待核准的費用申請</td></tr>';
+    } else {
+        body.innerHTML = pending.map(e =>
+            '<tr>' +
+            '<td>' + (e.expDate || '-') + '</td>' +
+            '<td style="font-weight:600">' + (e.applicant || '-') + '</td>' +
+            '<td>' + (e.category || '-') + '</td>' +
+            '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + (e.description || '') + '">' + (e.description || '-') + '</td>' +
+            '<td>' + (e.invoiceNo || '-') + '</td>' +
+            '<td class="amount" style="font-weight:600">' + fmt(e.amountAfterTax || 0) + '</td>' +
+            '<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + (e.notes || '') + '">' + (e.notes || '-') + '</td>' +
+            '<td><div style="display:flex;gap:6px;white-space:nowrap;">' +
+                '<button class="btn btn-sm btn-success" onclick="approveExpense(\'' + e.id + '\')">核准</button>' +
+                '<button class="btn btn-sm btn-danger" onclick="rejectExpense(\'' + e.id + '\')">駁回</button>' +
+            '</div></td></tr>'
+        ).join('');
+    }
+
+    // Recently processed
+    const processed = _expenses.filter(e => e.approvalStatus !== 'pending')
+        .sort((a, b) => (b.approvalDate || b.updatedAt || '').localeCompare(a.approvalDate || a.updatedAt || ''))
+        .slice(0, 20);
+
+    const histBody = document.getElementById('approvedHistoryBody');
+    if (processed.length === 0) {
+        histBody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:#7f8c8d;">尚無記錄</td></tr>';
+    } else {
+        histBody.innerHTML = processed.map(e => {
+            const badge = e.approvalStatus === 'approved'
+                ? '<span class="status-badge approved">已核准</span>'
+                : '<span class="status-badge rejected" title="' + (e.rejectReason || '') + '">已駁回</span>';
+            return '<tr' + (e.approvalStatus === 'rejected' ? ' style="opacity:0.6"' : '') + '>' +
+                '<td>' + (e.expDate || '-') + '</td>' +
+                '<td>' + (e.applicant || '-') + '</td>' +
+                '<td>' + (e.category || '-') + '</td>' +
+                '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (e.description || '-') + '</td>' +
+                '<td class="amount">' + fmt(e.amountAfterTax || 0) + '</td>' +
+                '<td>' + badge + '</td>' +
+                '<td>' + (e.approvalDate || '-') + '</td></tr>';
+        }).join('');
+    }
+}
+
+async function approveExpense(id) {
+    const exp = _expenses.find(e => e.id === id);
+    if (!exp) return;
+    const today = new Date().toISOString().split('T')[0];
+    const data = { ...exp, approvalStatus: 'approved', approvalDate: today, rejectReason: '' };
+    await fetch('/api/expenses/' + id, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    await loadExpenses();
+    renderApproveTab();
+}
+
+async function rejectExpense(id) {
+    const reason = prompt('請輸入駁回原因：');
+    if (reason === null) return; // cancelled
+    const exp = _expenses.find(e => e.id === id);
+    if (!exp) return;
+    const today = new Date().toISOString().split('T')[0];
+    const data = { ...exp, approvalStatus: 'rejected', approvalDate: today, rejectReason: reason };
+    await fetch('/api/expenses/' + id, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    await loadExpenses();
+    renderApproveTab();
+}
+
+// ============================================================
+// TAB 3: Finance — Payment
+// ============================================================
+function renderFinanceTab() {
+    // Approved but unpaid
+    const unpaid = _expenses.filter(e => e.approvalStatus === 'approved' && e.paymentStatus !== 'paid');
+    unpaid.sort((a, b) => (a.expDate || '').localeCompare(b.expDate || ''));
+
+    const body = document.getElementById('financeListBody');
+    if (unpaid.length === 0) {
+        body.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:32px;color:#7f8c8d;">目前沒有待付款的費用</td></tr>';
+    } else {
+        body.innerHTML = unpaid.map(e =>
+            '<tr>' +
+            '<td>' + (e.expDate || '-') + '</td>' +
+            '<td style="font-weight:600">' + (e.applicant || '-') + '</td>' +
+            '<td>' + (e.category || '-') + '</td>' +
+            '<td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + (e.description || '') + '">' + (e.description || '-') + '</td>' +
+            '<td class="amount" style="font-weight:600">' + fmt(e.amountAfterTax || 0) + '</td>' +
+            '<td>' + (e.approvalDate || '-') + '</td>' +
+            '<td><input type="date" class="fin-date-input" id="finDate_' + e.id + '" value="' + (e.expectedPayDate || '') + '"></td>' +
+            '<td><select class="fin-method-select" id="finMethod_' + e.id + '">' +
+                '<option value="bank_transfer"' + (e.paymentMethod === 'bank_transfer' ? ' selected' : '') + '>銀行轉帳</option>' +
+                '<option value="cash"' + (e.paymentMethod === 'cash' ? ' selected' : '') + '>現金</option>' +
+                '<option value="company_card"' + (e.paymentMethod === 'company_card' ? ' selected' : '') + '>公司卡</option>' +
+            '</select></td>' +
+            '<td><button class="btn btn-sm btn-success" onclick="markPaid(\'' + e.id + '\')">確認付款</button></td>' +
+            '</tr>'
+        ).join('');
+    }
+
+    // Recently paid
+    const paid = _expenses.filter(e => e.paymentStatus === 'paid')
+        .sort((a, b) => (b.actualPayDate || '').localeCompare(a.actualPayDate || ''))
+        .slice(0, 20);
+
+    const paidBody = document.getElementById('paidHistoryBody');
+    if (paid.length === 0) {
+        paidBody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:#7f8c8d;">尚無付款記錄</td></tr>';
+    } else {
+        paidBody.innerHTML = paid.map(e =>
+            '<tr>' +
+            '<td>' + (e.expDate || '-') + '</td>' +
+            '<td>' + (e.applicant || '-') + '</td>' +
+            '<td>' + (e.category || '-') + '</td>' +
+            '<td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (e.description || '-') + '</td>' +
+            '<td class="amount" style="font-weight:600">' + fmt(e.amountAfterTax || 0) + '</td>' +
+            '<td>' + (e.actualPayDate || '-') + '</td>' +
+            '<td>' + (PAYMENT_METHOD_LABELS[e.paymentMethod] || '-') + '</td></tr>'
+        ).join('');
+    }
+}
+
+async function markPaid(id) {
+    const exp = _expenses.find(e => e.id === id);
+    if (!exp) return;
+    const today = new Date().toISOString().split('T')[0];
+    const expectedDate = document.getElementById('finDate_' + id).value;
+    const method = document.getElementById('finMethod_' + id).value;
+    const data = { ...exp, paymentStatus: 'paid', actualPayDate: today, expectedPayDate: expectedDate, paymentMethod: method };
+    await fetch('/api/expenses/' + id, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    await loadExpenses();
+    renderFinanceTab();
+}
+
+// ============================================================
+// TAB 4: Expense List (all records)
 // ============================================================
 function renderExpenseList() {
     const filterMonth = document.getElementById('filterMonth').value;
@@ -230,7 +369,6 @@ function renderExpenseList() {
     if (filterMonth) filtered = filtered.filter(e => (e.expDate || '').startsWith(filterMonth));
     if (filterStatus) filtered = filtered.filter(e => e.approvalStatus === filterStatus);
     if (filterPayment) filtered = filtered.filter(e => e.paymentStatus === filterPayment);
-
     filtered.sort((a, b) => (b.expDate || '').localeCompare(a.expDate || ''));
 
     const body = document.getElementById('expenseListBody');
@@ -252,10 +390,9 @@ function renderExpenseList() {
             '<td><span class="status-badge ' + (e.approvalStatus || 'pending') + '">' + (APPROVAL_LABELS[e.approvalStatus] || '待審核') + '</span></td>' +
             '<td><span class="status-badge ' + (e.paymentStatus || 'unpaid') + '">' + (PAYMENT_LABELS[e.paymentStatus] || '未付款') + '</span></td>' +
             '<td><div style="display:flex;gap:6px;white-space:nowrap;">' +
-                '<button class="btn btn-sm btn-primary" onclick="editExpense(\'' + e.id + '\')">編輯</button>' +
+                '<button class="btn btn-sm btn-primary" onclick="editExpenseApply(\'' + e.id + '\')">編輯</button>' +
                 '<button class="btn btn-sm btn-danger" onclick="deleteExpense(\'' + e.id + '\')">刪除</button>' +
-            '</div></td>' +
-        '</tr>';
+            '</div></td></tr>';
     }).join('');
 
     const pendingCount = filtered.filter(e => e.approvalStatus === 'pending').length;
@@ -265,17 +402,6 @@ function renderExpenseList() {
         '<div class="ls-item">含稅合計 <span class="ls-value">' + fmt(totalAmount) + '</span></div>' +
         '<div class="ls-item">待審核 <span class="ls-value" style="color:#b7950b">' + pendingCount + '</span></div>' +
         '<div class="ls-item">已核准未付 <span class="ls-value" style="color:#e74c3c">' + unpaidCount + '</span></div>';
-}
-
-function editExpense(id) {
-    const exp = _expenses.find(e => e.id === id);
-    if (!exp) return;
-    editingId = id;
-    writeForm(exp);
-    document.getElementById('editBanner').style.display = 'block';
-    document.getElementById('editBannerText').textContent = '正在編輯：' + exp.applicant + '（' + exp.expDate + ' ' + exp.category + '）';
-    switchTab('new');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 async function deleteExpense(id) {
@@ -295,31 +421,28 @@ function clearFilters() {
 }
 
 // ============================================================
-// Summary
+// TAB 5: Summary (approved only)
 // ============================================================
 function renderSummary() {
     const summaryMonth = document.getElementById('summaryMonth').value;
     let filtered = [..._expenses];
     if (summaryMonth) filtered = filtered.filter(e => (e.expDate || '').startsWith(summaryMonth));
-
-    // Only count approved + pending (not rejected)
-    const valid = filtered.filter(e => e.approvalStatus !== 'rejected');
+    const valid = filtered.filter(e => e.approvalStatus === 'approved');
 
     const totalBefore = valid.reduce((s, e) => s + (e.amountBeforeTax || 0), 0);
     const totalTax = valid.reduce((s, e) => s + (e.tax || 0), 0);
     const totalAfter = valid.reduce((s, e) => s + (e.amountAfterTax || 0), 0);
-    const paidAmount = valid.filter(e => e.paymentStatus === 'paid').reduce((s, e) => s + (e.amountAfterTax || 0), 0);
-    const unpaidAmount = totalAfter - paidAmount;
+    const paidAmt = valid.filter(e => e.paymentStatus === 'paid').reduce((s, e) => s + (e.amountAfterTax || 0), 0);
+    const unpaidAmt = totalAfter - paidAmt;
 
     document.getElementById('summaryCards').innerHTML =
-        '<div class="summary-card"><div class="sc-label">報銷筆數</div><div class="sc-value">' + valid.length + '</div></div>' +
+        '<div class="summary-card"><div class="sc-label">已核准筆數</div><div class="sc-value">' + valid.length + '</div></div>' +
         '<div class="summary-card"><div class="sc-label">未稅合計</div><div class="sc-value">' + fmt(totalBefore) + '</div></div>' +
         '<div class="summary-card"><div class="sc-label">營業稅合計</div><div class="sc-value">' + fmt(totalTax) + '</div></div>' +
         '<div class="summary-card"><div class="sc-label">含稅合計</div><div class="sc-value" style="color:#2c3e50">' + fmt(totalAfter) + '</div></div>' +
-        '<div class="summary-card"><div class="sc-label">已付款</div><div class="sc-value" style="color:#27ae60">' + fmt(paidAmount) + '</div></div>' +
-        '<div class="summary-card"><div class="sc-label">未付款</div><div class="sc-value" style="color:#e74c3c">' + fmt(unpaidAmount) + '</div></div>';
+        '<div class="summary-card"><div class="sc-label">已付款</div><div class="sc-value" style="color:#27ae60">' + fmt(paidAmt) + '</div></div>' +
+        '<div class="summary-card"><div class="sc-label">未付款</div><div class="sc-value" style="color:#e74c3c">' + fmt(unpaidAmt) + '</div></div>';
 
-    // Group by category
     const byCategory = {};
     for (const e of valid) {
         const cat = e.category || '未分類';
@@ -336,12 +459,10 @@ function renderSummary() {
         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:32px;color:#7f8c8d;">無資料</td></tr>';
         return;
     }
-
     let html = cats.map(cat => {
         const d = byCategory[cat];
         return '<tr><td>' + cat + '</td><td>' + d.count + '</td><td>' + fmt(d.before) + '</td><td>' + fmt(d.tax) + '</td><td style="font-weight:600">' + fmt(d.after) + '</td></tr>';
     }).join('');
-
     html += '<tr class="total-row"><td>合計</td><td>' + valid.length + '</td><td>' + fmt(totalBefore) + '</td><td>' + fmt(totalTax) + '</td><td>' + fmt(totalAfter) + '</td></tr>';
     tbody.innerHTML = html;
 }
@@ -358,13 +479,10 @@ function printSummary() {
 document.addEventListener('DOMContentLoaded', async () => {
     initMoneyInputs();
     setupTaxCalc();
-    setupApprovalToggle();
-
     await loadEmployees();
     await loadExpenses();
     populateApplicantSelect();
 
-    // Default filter month to current
     const now = new Date();
     const ym = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
     document.getElementById('filterMonth').value = ym;

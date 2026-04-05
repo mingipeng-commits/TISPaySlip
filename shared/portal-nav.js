@@ -2,7 +2,7 @@
 // TIS Back Office Portal — Shared Navigation Bar
 // ============================================================
 (function() {
-    const PORTAL_VERSION = '3.1.0';
+    const PORTAL_VERSION = '3.2.0';
     const modules = [
         { id: 'payslip',  label: '薪資條管理', path: '/modules/payslip/' },
         { id: 'people',   label: '人事管理',   path: '/modules/people/' },

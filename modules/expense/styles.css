@@ -1,0 +1,36 @@
+/* Expense module styles */
+.text-area-field {
+    width: 100%; padding: 8px 10px;
+    border: 1px solid #dce1e8; border-radius: 6px;
+    font-family: inherit; font-size: 14px; resize: vertical;
+}
+
+.status-badge {
+    display: inline-block; padding: 2px 10px; border-radius: 12px;
+    font-size: 12px; font-weight: 600; white-space: nowrap;
+}
+.status-badge.pending { background: #fef9e7; color: #b7950b; }
+.status-badge.approved { background: #e8f6ef; color: #1e8449; }
+.status-badge.rejected { background: #fdedec; color: #c0392b; }
+.status-badge.paid { background: #e8f6ef; color: #1e8449; }
+.status-badge.unpaid { background: #fef9e7; color: #b7950b; }
+
+.list-summary {
+    padding: 12px 16px; background: #f8f9fb;
+    border-top: 1px solid #dce1e8;
+    font-size: 13px; color: #7f8c8d;
+    display: flex; gap: 24px; flex-wrap: wrap;
+}
+.list-summary .ls-item { display: flex; gap: 6px; }
+.list-summary .ls-value { font-weight: 700; color: #2c3e50; }
+
+.summary-cards {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px; margin-bottom: 24px;
+}
+.summary-card {
+    background: white; border-radius: 10px; padding: 16px 20px;
+    border: 1px solid #dce1e8; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.summary-card .sc-label { font-size: 12px; color: #7f8c8d; margin-bottom: 4px; }
+.summary-card .sc-value { font-size: 22px; font-weight: 700; }

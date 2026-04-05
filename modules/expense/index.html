@@ -5,25 +5,240 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>費用報銷 — TIS Back Office</title>
     <link rel="stylesheet" href="../../shared/shared.css">
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", sans-serif; background: var(--portal-bg); margin: 0; }
-        .coming-soon-page { max-width: 600px; margin: 80px auto; text-align: center; padding: 24px; }
-        .coming-soon-page .cs-icon { font-size: 64px; margin-bottom: 16px; }
-        .coming-soon-page h2 { font-size: 24px; color: var(--portal-primary); margin-bottom: 8px; }
-        .coming-soon-page p { color: var(--portal-text-light, #7f8c8d); font-size: 15px; }
-        .coming-soon-page .back-link { display: inline-block; margin-top: 24px; padding: 10px 24px; background: var(--portal-accent); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; }
-        .coming-soon-page .back-link:hover { opacity: 0.9; }
-    </style>
+    <link rel="stylesheet" href="../payslip/styles.css">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+
 <div id="portal-nav"></div>
 <script src="../../shared/portal-nav.js"></script>
-<div class="coming-soon-page">
-    <div class="cs-icon">&#128179;</div>
-    <h2>費用報銷</h2>
-    <p>Expense & Reimbursement Management</p>
-    <p style="margin-top:12px; color:#b0b0b0;">此模組尚在開發中，敬請期待。</p>
-    <a href="/" class="back-link">&#8592; 返回入口</a>
+
+<div class="module-header">
+    <div>
+        <h1>費用報銷</h1>
+        <div class="subtitle">Expense & Reimbursement Management</div>
+    </div>
 </div>
+
+<div class="tab-bar no-print">
+    <button class="tab-btn active" data-tab="new" onclick="switchTab('new')">&#128221; 新增報銷</button>
+    <button class="tab-btn" data-tab="list" onclick="switchTab('list')">&#128196; 報銷記錄</button>
+    <button class="tab-btn" data-tab="summary" onclick="switchTab('summary')">&#128200; 費用彙總</button>
+</div>
+
+<!-- ==================== TAB 1: New Expense ==================== -->
+<div class="tab-content active" id="tab-new">
+    <div class="full-width" style="max-width:900px; margin:0 auto; padding:24px;">
+        <div id="editBanner" class="card" style="display:none; border-color: #f39c12;">
+            <div class="card-body" style="background:#fef9e7; display:flex; justify-content:space-between; align-items:center;">
+                <span id="editBannerText" style="font-weight:600; color:#7d6608;"></span>
+                <button class="btn btn-sm btn-secondary" onclick="resetForm()">取消編輯</button>
+            </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+            <!-- Left column -->
+            <div class="form-panel">
+                <!-- Expense Details -->
+                <div class="card">
+                    <div class="card-header"><span class="icon">&#128179;</span> 費用明細</div>
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>申請人 *</label>
+                                <select id="expApplicant">
+                                    <option value="">-- 請選擇 --</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>費用類別 *</label>
+                                <select id="expCategory">
+                                    <option value="交通費">交通費</option>
+                                    <option value="差旅費">差旅費</option>
+                                    <option value="餐費">餐費</option>
+                                    <option value="辦公用品">辦公用品</option>
+                                    <option value="通訊費">通訊費</option>
+                                    <option value="業務招待">業務招待</option>
+                                    <option value="教育訓練">教育訓練</option>
+                                    <option value="雜支">雜支</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label>費用日期 *</label><input type="date" id="expDate"></div>
+                            <div class="form-group"><label>發票/收據號碼</label><input type="text" id="expInvoiceNo" placeholder="AA-12345678"></div>
+                        </div>
+                        <div class="form-row single">
+                            <div class="form-group"><label>用途說明 *</label><textarea id="expDescription" rows="2" class="text-area-field" placeholder="請說明費用用途及業務關聯..."></textarea></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Amount -->
+                <div class="card">
+                    <div class="card-header"><span class="icon">&#128176;</span> 金額</div>
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="form-group"><label>未稅金額</label><input type="text" class="money-input" id="expAmountBeforeTax" value="0" inputmode="numeric"></div>
+                            <div class="form-group"><label>營業稅 (5%)</label><input type="text" class="money-input" id="expTax" value="0" inputmode="numeric"></div>
+                        </div>
+                        <div class="form-row single">
+                            <div class="form-group"><label>含稅金額</label><input type="text" class="money-input" id="expAmountAfterTax" value="0" inputmode="numeric" readonly style="background:#f0f2f5;"></div>
+                        </div>
+                        <div class="tier-info" id="taxCalcInfo" style="display:none; background:#f0f7ff; border-color:#c8dff7; color:#2471a3;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right column -->
+            <div class="form-panel">
+                <!-- Approval -->
+                <div class="card">
+                    <div class="card-header"><span class="icon">&#9989;</span> 核准狀態</div>
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>審核狀態</label>
+                                <select id="expApprovalStatus">
+                                    <option value="pending">待審核</option>
+                                    <option value="approved">已核准</option>
+                                    <option value="rejected">已駁回</option>
+                                </select>
+                            </div>
+                            <div class="form-group"><label>核准日期</label><input type="date" id="expApprovalDate"></div>
+                        </div>
+                        <div class="form-row single" id="rejectReasonRow" style="display:none;">
+                            <div class="form-group"><label>駁回原因</label><textarea id="expRejectReason" rows="2" class="text-area-field" placeholder="請說明駁回原因..."></textarea></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment -->
+                <div class="card">
+                    <div class="card-header"><span class="icon">&#128179;</span> 付款資訊</div>
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="form-group"><label>預計付款日</label><input type="date" id="expExpectedPayDate"></div>
+                            <div class="form-group">
+                                <label>付款狀態</label>
+                                <select id="expPaymentStatus">
+                                    <option value="unpaid">未付款</option>
+                                    <option value="paid">已付款</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label>實際付款日</label><input type="date" id="expActualPayDate"></div>
+                            <div class="form-group">
+                                <label>付款方式</label>
+                                <select id="expPaymentMethod">
+                                    <option value="">-- 請選擇 --</option>
+                                    <option value="bank_transfer">銀行轉帳</option>
+                                    <option value="cash">現金</option>
+                                    <option value="company_card">公司卡</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notes -->
+                <div class="card">
+                    <div class="card-header"><span class="icon">&#128221;</span> 備註</div>
+                    <div class="card-body">
+                        <div class="form-row single">
+                            <div class="form-group"><textarea id="expNotes" rows="2" class="text-area-field" placeholder="其他備註事項..."></textarea></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="actions-bar no-print" style="max-width:900px; margin:16px auto 0;">
+            <button class="btn btn-success" style="flex:1" onclick="saveExpense()">&#128190; 儲存</button>
+            <button class="btn btn-secondary" style="flex:1" onclick="resetForm()">&#128260; 重置</button>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== TAB 2: Expense List ==================== -->
+<div class="tab-content" id="tab-list">
+    <div class="full-width" style="max-width:1200px; margin:0 auto; padding:24px;">
+        <div class="card">
+            <div class="card-header"><span class="icon">&#128196;</span> 報銷記錄</div>
+            <div class="card-body">
+                <div class="entries-toolbar">
+                    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                        <div class="form-group" style="flex-direction:row; align-items:center; gap:6px;">
+                            <label style="white-space:nowrap; margin:0;">月份：</label>
+                            <input type="month" id="filterMonth" onchange="renderExpenseList()">
+                        </div>
+                        <div class="form-group" style="flex-direction:row; align-items:center; gap:6px;">
+                            <label style="white-space:nowrap; margin:0;">狀態：</label>
+                            <select id="filterStatus" onchange="renderExpenseList()" style="padding:6px 10px;border:1px solid #dce1e8;border-radius:6px;font-size:13px;">
+                                <option value="">全部</option>
+                                <option value="pending">待審核</option>
+                                <option value="approved">已核准</option>
+                                <option value="rejected">已駁回</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex-direction:row; align-items:center; gap:6px;">
+                            <label style="white-space:nowrap; margin:0;">付款：</label>
+                            <select id="filterPayment" onchange="renderExpenseList()" style="padding:6px 10px;border:1px solid #dce1e8;border-radius:6px;font-size:13px;">
+                                <option value="">全部</option>
+                                <option value="unpaid">未付款</option>
+                                <option value="paid">已付款</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-sm btn-secondary" onclick="clearFilters()">清除篩選</button>
+                    </div>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table class="entries-table">
+                        <thead>
+                            <tr>
+                                <th>日期</th><th>申請人</th><th>類別</th><th>用途說明</th>
+                                <th class="amount">含稅金額</th>
+                                <th>審核</th><th>付款</th><th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expenseListBody"></tbody>
+                    </table>
+                </div>
+                <div class="list-summary" id="listSummary"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== TAB 3: Summary ==================== -->
+<div class="tab-content" id="tab-summary">
+    <div class="full-width" style="max-width:1200px; margin:0 auto; padding:24px;">
+        <div class="entries-toolbar no-print">
+            <div class="form-group" style="flex-direction:row; align-items:center; gap:8px;">
+                <label style="white-space:nowrap; margin:0; font-weight:600;">月份：</label>
+                <input type="month" id="summaryMonth" onchange="renderSummary()">
+                <button class="btn btn-sm btn-secondary" onclick="document.getElementById('summaryMonth').value=''; renderSummary();">顯示全部</button>
+            </div>
+            <button class="btn btn-sm btn-primary" onclick="printSummary()">&#128424; 列印</button>
+        </div>
+
+        <div class="summary-cards" id="summaryCards"></div>
+
+        <div class="card">
+            <div class="card-header"><span class="icon">&#128200;</span> 依類別彙總</div>
+            <div class="card-body" style="padding:0; overflow-x:auto;">
+                <table class="summary-table">
+                    <thead>
+                        <tr><th>費用類別</th><th>筆數</th><th>未稅合計</th><th>營業稅合計</th><th>含稅合計</th></tr>
+                    </thead>
+                    <tbody id="summaryTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="app.js"></script>
 </body>
 </html>

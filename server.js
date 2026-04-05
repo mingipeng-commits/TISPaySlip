@@ -14,6 +14,7 @@ if (!fs.existsSync(DATA_DIR)) {
 // Data file paths
 const ENTRIES_FILE = path.join(DATA_DIR, 'entries.json');
 const EMPLOYEES_FILE = path.join(DATA_DIR, 'employees.json');
+const EXPENSES_FILE = path.join(DATA_DIR, 'expenses.json');
 
 // Initialize data files if they don't exist
 function initFile(filePath) {
@@ -23,6 +24,7 @@ function initFile(filePath) {
 }
 initFile(ENTRIES_FILE);
 initFile(EMPLOYEES_FILE);
+initFile(EXPENSES_FILE);
 
 // Helpers
 function readJSON(filePath) {
@@ -133,6 +135,43 @@ app.delete('/api/employees/:id', (req, res) => {
     employees = employees.filter(e => e.id !== req.params.id);
     if (employees.length === before) return res.status(404).json({ error: 'Employee not found' });
     writeJSON(EMPLOYEES_FILE, employees);
+    res.json({ success: true });
+});
+
+// ============================================================
+// Expenses API
+// ============================================================
+app.get('/api/expenses', (req, res) => {
+    res.json(readJSON(EXPENSES_FILE));
+});
+app.post('/api/expenses', (req, res) => {
+    const expenses = readJSON(EXPENSES_FILE);
+    const data = req.body;
+    data.id = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+    data.createdAt = new Date().toISOString();
+    data.updatedAt = data.createdAt;
+    expenses.push(data);
+    writeJSON(EXPENSES_FILE, expenses);
+    res.json(data);
+});
+app.put('/api/expenses/:id', (req, res) => {
+    const expenses = readJSON(EXPENSES_FILE);
+    const idx = expenses.findIndex(e => e.id === req.params.id);
+    if (idx < 0) return res.status(404).json({ error: 'Expense not found' });
+    const data = req.body;
+    data.id = req.params.id;
+    data.createdAt = expenses[idx].createdAt;
+    data.updatedAt = new Date().toISOString();
+    expenses[idx] = data;
+    writeJSON(EXPENSES_FILE, expenses);
+    res.json(data);
+});
+app.delete('/api/expenses/:id', (req, res) => {
+    let expenses = readJSON(EXPENSES_FILE);
+    const before = expenses.length;
+    expenses = expenses.filter(e => e.id !== req.params.id);
+    if (expenses.length === before) return res.status(404).json({ error: 'Expense not found' });
+    writeJSON(EXPENSES_FILE, expenses);
     res.json({ success: true });
 });
 
